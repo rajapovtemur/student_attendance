@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>O'qituvchi Paneli | ATT-241 University Portal</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- QRCode.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        :root {
+            --sidebar-width: 265px;
+        }
+        body {
+            background-color: #f1f5f9;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            overflow-x: hidden;
+        }
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+            color: #fff;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1040;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+            overflow-y: auto;
+        }
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.72);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.35rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            background: rgba(59, 130, 246, 0.22);
+            color: #ffffff;
+        }
+        .sidebar .nav-link.active {
+            background: #2563eb;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+        }
+        .main-content {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        /* Desktop collapsed state: hide sidebar and expand main-content to full 100% width */
+        body.sidebar-collapsed .sidebar {
+            transform: translateX(-100%);
+        }
+        body.sidebar-collapsed .main-content {
+            margin-left: 0;
+        }
+        /* Hamburger Toggle Button */
+        .sidebar-toggle-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #0f172a;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+        .sidebar-toggle-btn:hover {
+            background: #2563eb;
+            border-color: #2563eb;
+            color: #ffffff;
+            transform: scale(1.03);
+        }
+        /* Mobile Overlay Backdrop */
+        .sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(2px);
+            z-index: 1035;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        body.sidebar-mobile-open .sidebar-backdrop {
+            opacity: 1;
+            visibility: visible;
+        }
+        .topbar {
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 0.9rem 1.75rem;
+        }
+        .card {
+            border: none;
+            border-radius: 14px;
+            box-shadow: 0 2px 12px rgba(15, 23, 42, 0.05);
+        }
+        .stat-card {
+            border-left: 4px solid;
+        }
+        .stat-total { border-left-color: #2563eb; }
+        .stat-present { border-left-color: #16a34a; }
+        .stat-absent { border-left-color: #dc2626; }
+        .stat-redline { border-left-color: #e11d48; background: #fff1f2; }
+
+        .attendance-check {
+            width: 1.45em;
+            height: 1.45em;
+            cursor: pointer;
+        }
+        .attendance-check:checked {
+            background-color: #16a34a;
+            border-color: #16a34a;
+        }
+        /* Red Line (>25% missed) automatic warning highlight */
+        tr.row-red-line > td {
+            background-color: #ffe4e6 !important;
+            border-bottom-color: #fecdd3 !important;
+        }
+        tr.row-red-line td:first-child {
+            border-left: 4px solid #e11d48;
+        }
+        /* Condition Arrow Badges */
+        .condition-arrow {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            font-size: 0.95rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .arrow-up {
+            background: #dcfce7;
+            color: #15803d;
+        }
+        .arrow-down {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+        .arrow-neutral {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+        .ranking-item {
+            padding: 0.55rem 0.75rem;
+            border-radius: 10px;
+            background: #f8fafc;
+            margin-bottom: 0.45rem;
+            border: 1px solid #e2e8f0;
+        }
+        .qr-box {
+            display: inline-block;
+            padding: 1rem;
+            background: #fff;
+            border-radius: 14px;
+            border: 2px dashed #2563eb;
+        }
+        @media (max-width: 991.98px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            body.sidebar-mobile-open .sidebar {
+                transform: translateX(0);
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+            }
+            .main-content {
+                margin-left: 0 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Mobile Sidebar Overlay Backdrop -->
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeMobileSidebar()"></div>
+
+<!-- Sidebar -->
+<aside class="sidebar p-3" id="appSidebar">
+    <div>
+        <div class="d-flex align-items-center justify-content-between gap-2 px-2 py-2 mb-3 border-bottom border-secondary border-opacity-25 pb-3">
+            <div class="d-flex align-items-center gap-2">
+                <div class="bg-primary p-2 rounded-3 text-white d-inline-flex">
+                    <i class="bi bi-mortarboard-fill fs-4"></i>
+                </div>
+                <div>
+                    <h6 class="mb-0 fw-bold">University Portal</h6>
+                    <small class="text-info fw-semibold">ATT-241 &bull; O'qituvchi</small>
+                </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-light d-lg-none" onclick="closeMobileSidebar()" title="Yopish">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <div class="px-2 mb-3">
+            <div class="p-2 rounded-3 bg-white bg-opacity-10 small">
+                <div class="text-white-50" style="font-size: 0.72rem;">O'qituvchi:</div>
+                <div class="fw-bold text-white" style="font-size: 0.88rem;">{{ user.full_name }}</div>
+                <div class="text-info small" style="font-size: 0.72rem;">@{{ user.username }}</div>
+                <span class="badge bg-info text-dark mt-1">Guruh: ATT-241</span>
+            </div>
+        </div>
+
+        <ul class="nav flex-column" id="sidebarNav">
+            <li class="nav-item">
+                <a class="nav-link active" data-section="homeSection" onclick="switchSection('homeSection', this)">
+                    <i class="bi bi-grid-1x2-fill"></i>
+                    <span>{{ t.nav_home_smart }}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-section="subjectsSection" onclick="switchSection('subjectsSection', this)">
+                    <i class="bi bi-journal-bookmark-fill"></i>
+                    <span>{{ t.nav_subjects }}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-section="studentsSection" onclick="switchSection('studentsSection', this)">
+                    <i class="bi bi-people-fill"></i>
+                    <span>{{ t.nav_students }}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-section="reportsSection" onclick="switchSection('reportsSection', this)">
+                    <i class="bi bi-file-earmark-bar-graph-fill"></i>
+                    <span>{{ t.nav_reports }}</span>
+                </a>
+            </li>
+            <li class="nav-item mt-2 pt-2 border-top border-secondary border-opacity-25">
+                <a class="nav-link" href="/settings">
+                    <i class="bi bi-gear-fill"></i>
+                    <span>{{ t.nav_settings }}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-warning" href="/admin">
+                    <i class="bi bi-shield-lock-fill"></i>
+                    <span>{{ t.nav_admin }}</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="border-top border-secondary border-opacity-25 pt-3 px-2">
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="text-truncate me-2">
+                <div class="fw-semibold small text-white text-truncate">{{ user.full_name }}</div>
+                <div class="text-white-50 text-truncate" style="font-size: 0.72rem;">@{{ user.username }}</div>
+            </div>
+            <a href="/logout" class="btn btn-outline-light btn-sm" title="{{ t.logout }}">
+                <i class="bi bi-box-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</aside>
+
+<!-- Main Content Area -->
+<div class="main-content" id="mainContentArea">
+    <!-- Topbar -->
+    <header class="topbar d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <button type="button" id="sidebarToggleBtn" class="sidebar-toggle-btn shadow-sm" onclick="toggleSidebar()" title="Menyuni yopish / ochish">
+                <i class="bi bi-list fs-4"></i>
+            </button>
+            <div>
+                <h5 class="mb-0 fw-bold text-dark" id="pageTitle">{{ t.major_name }} (ATT-241)</h5>
+                <small class="text-muted">{{ t.teacher_header_sub }}</small>
+            </div>
+        </div>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <!-- 4-Language Switcher Dropdown -->
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary fw-semibold dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-translate me-1 text-primary"></i> {{ supported_languages[current_lang] }}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                    {% for code, name in supported_languages.items() %}
+                    <li>
+                        <a class="dropdown-item d-flex justify-content-between align-items-center {% if code == current_lang %}active fw-bold{% endif %}"
+                           href="/set-language/{{ code }}">
+                            <span>{{ name }}</span>
+                            {% if code == current_lang %}<i class="bi bi-check2 ms-2"></i>{% endif %}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <a href="/settings" class="btn btn-outline-secondary fw-semibold">
+                <i class="bi bi-gear-fill me-1"></i> {{ t.nav_settings }}
+            </a>
+            <a href="/admin" class="btn btn-outline-dark fw-semibold">
+                <i class="bi bi-shield-lock-fill me-1 text-warning"></i> {{ t.nav_admin }}
+            </a>
+            <button id="startClassBtn" class="btn btn-warning fw-semibold shadow-sm">
+                <i class="bi bi-qr-code-scan me-1"></i> {{ t.start_class_btn }}
+            </button>
+            <button id="exportCsvTopBtn" class="btn btn-outline-success fw-semibold">
+                <i class="bi bi-file-earmark-excel-fill me-1"></i> {{ t.export_excel_btn }}
+            </button>
+            <button class="btn btn-primary fw-semibold" data-bs-toggle="modal" data-bs-target="#addStudentModal">
+                <i class="bi bi-person-plus-fill me-1"></i> {{ t.add_student_btn }}
+            </button>
+        </div>
+    </header>
+
+    <div class="container-fluid p-4">
+        <!-- KPI Summary Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-sm-6 col-xl-3">
+                <div class="card stat-card stat-total p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small">{{ t.kpi_students }}</div>
+                            <h3 class="mb-0 fw-bold" id="totalCount">0</h3>
+                        </div>
+                        <i class="bi bi-people fs-2 text-primary opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card stat-card stat-present p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small">{{ t.kpi_present }}</div>
+                            <h3 class="mb-0 fw-bold text-success" id="presentCount">0</h3>
+                        </div>
+                        <i class="bi bi-check-circle fs-2 text-success opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card stat-card stat-absent p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-muted small">{{ t.kpi_absent }}</div>
+                            <h3 class="mb-0 fw-bold text-danger" id="absentCount">0</h3>
+                        </div>
+                        <i class="bi bi-x-circle fs-2 text-danger opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card stat-card stat-redline p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="text-danger fw-semibold small">{{ t.kpi_redline }}</div>
+                            <h3 class="mb-0 fw-bold text-danger" id="redLineCount">0</h3>
+                        </div>
+                        <i class="bi bi-exclamation-octagon-fill fs-2 text-danger"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SECTION 1: HOME (SMART ATTENDANCE + QUICK RANKINGS WIDGET) ==================== -->
+        <div id="homeSection" class="portal-section">
+            <!-- Quick Rankings Widget: Top 5 / Bottom 5 -->
+            <div class="row g-3 mb-4">
+                <div class="col-lg-6">
+                    <div class="card p-3 h-100 border-top border-4 border-success">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="fw-bold text-success mb-0">
+                                <i class="bi bi-trophy-fill me-1"></i> {{ t.top5_title }}
+                            </h6>
+                            <span class="badge bg-success-subtle text-success-emphasis">ATT-241</span>
+                        </div>
+                        <div id="top5WidgetList"></div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="card p-3 h-100 border-top border-4 border-danger">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="fw-bold text-danger mb-0">
+                                <i class="bi bi-graph-down-arrow me-1"></i> {{ t.bottom5_title }}
+                            </h6>
+                            <span class="badge bg-danger-subtle text-danger-emphasis">ATT-241</span>
+                        </div>
+                        <div id="bottom5WidgetList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Attendance Table Card -->
+            <div class="card p-4">
+                <!-- Controls Row: Subject Selector, Class Type ('Ma'ruza' / 'Amaliy'), Date, Search -->
+                <div class="row g-3 align-items-end mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold small text-primary">
+                            <i class="bi bi-book-half me-1"></i>{{ t.filter_subject }}
+                        </label>
+                        <select id="subjectSelect" class="form-select border-primary fw-semibold">
+                            {% if subjects %}
+                                {% for subj in subjects %}
+                                <option value="{{ subj.id }}" {% if loop.first %}selected{% endif %}>{{ subj.localized_name }}</option>
+                                {% endfor %}
+                            {% else %}
+                                <option value="">-- Fanni tanlang --</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold small text-primary">{{ t.filter_class_type }}</label>
+                        <select id="classTypeSelect" class="form-select border-primary fw-semibold">
+                            <option value="Ma'ruza">Ma'ruza</option>
+                            <option value="Amaliy">Amaliy</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold small text-secondary">{{ t.filter_date }}</label>
+                        <input type="date" id="attendanceDate" class="form-control">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold small text-secondary">{{ t.filter_search }}</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                            <input type="text" id="searchInput" class="form-control" placeholder="Ism-familiya...">
+                        </div>
+                    </div>
+                    <div class="col-md-2 text-md-end">
+                        <div class="form-check form-switch d-inline-flex align-items-center gap-2 pt-2">
+                            <input class="form-check-input attendance-check" type="checkbox" id="selectAllCheckbox">
+                            <label class="form-check-label fw-semibold small" for="selectAllCheckbox">{{ t.select_all }}</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Selected Subject Teacher Info Banner -->
+                <div id="selectedSubjectInfoBar" class="alert alert-primary py-2 px-3 mb-3 d-flex flex-wrap justify-content-between align-items-center small"></div>
+
+                <!-- Notice when teacher has no matching subjects -->
+                <div id="noSubjectBanner" class="alert alert-warning d-none">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong>Sizning F.I.Sh ({{ user.full_name }}) bo'yicha biriktirilgan fanlar topilmadi!</strong>
+                    <div class="small mt-1">
+                        O'quv rejadagi o'qituvchilar: <b>Ramanov Muhiddin</b>, <b>Allashkurov Dilshod</b>, <b>Raximbayev Musobek</b>, <b>Bazarbayev Murat</b>, <b>Abdullayev Abdulla</b>, <b>O'qituvchi</b>.
+                    </div>
+                </div>
+
+                <!-- Attendance Table -->
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 50px;">#</th>
+                                <th>{{ t.col_full_name }}</th>
+                                <th>{{ t.col_group }}</th>
+                                <th>{{ t.col_hemis_status }}</th>
+                                <th class="text-center" style="width: 120px;">Keldi (Check)</th>
+                                <th style="width: 120px;">Holat</th>
+                                <th>{{ t.col_reason }}</th>
+                                <th class="text-end" style="width: 160px;">{{ t.col_actions }}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceTableBody">
+                            <tr>
+                                <td colspan="8" class="text-center py-4 text-muted">Yuklanmoqda...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Bottom Action Bar -->
+                <div class="d-flex flex-wrap justify-content-between align-items-center mt-4 pt-3 border-top gap-2">
+                    <div class="small text-muted d-flex flex-wrap align-items-center gap-2">
+                        <span><span class="condition-arrow arrow-up me-1"><i class="bi bi-arrow-up"></i></span> Oxirgi darslarda qatnashgan</span>
+                        <span><span class="condition-arrow arrow-down me-1"><i class="bi bi-arrow-down"></i></span> Oxirgi darsni qoldirgan</span>
+                        <span><span class="badge bg-danger ms-1">RED LINE</span> &gt;25% qoldirgan</span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button id="exportCsvBottomBtn" class="btn btn-outline-success px-3 fw-semibold">
+                            <i class="bi bi-file-earmark-excel me-1"></i> Export to Excel (Fan bo'yicha)
+                        </button>
+                        <button id="saveAttendanceBtn" class="btn btn-success px-4 fw-semibold">
+                            <i class="bi bi-floppy me-2"></i> Davomatni saqlash
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SECTION 2: SUBJECTS ==================== -->
+        <div id="subjectsSection" class="portal-section d-none">
+            <div class="card p-4">
+                <div class="mb-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-journal-bookmark-fill text-primary me-2"></i>Menga Biriktirilgan Fanlar ({{ user.full_name }})</h5>
+                    <small class="text-muted">Faqat siz Ma'ruza yoki Amaliy o'qituvchi sifatida biriktirilgan fanlar ro'yxati</small>
+                </div>
+                <div class="row g-3" id="subjectsCardsContainer"></div>
+            </div>
+        </div>
+
+        <!-- ==================== SECTION 3: STUDENTS ==================== -->
+        <div id="studentsSection" class="portal-section d-none">
+            <div class="card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-people-fill text-primary me-2"></i>ATT-241 Guruh Talabalari va Red-Line Monitoring</h5>
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addStudentModal">
+                        <i class="bi bi-person-plus-fill me-1"></i> Yangi talaba qo'shish
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>{{ t.col_full_name }}</th>
+                                <th>{{ t.col_username }}</th>
+                                <th>{{ t.col_group }}</th>
+                                <th>{{ t.col_hemis_status }}</th>
+                                <th>Holat</th>
+                                <th class="text-end">{{ t.stats_btn }}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="allStudentsDirectoryBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SECTION 4: REPORTS ==================== -->
+        <div id="reportsSection" class="portal-section d-none">
+            <div class="card p-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                    <div>
+                        <h5 class="fw-bold mb-0"><i class="bi bi-file-earmark-spreadsheet text-success me-2"></i>ATT-241 Davomat Hisobotlari va Eksport</h5>
+                        <small class="text-muted">Tanlangan fan va mashg'ulot turi bo'yicha hisobotni Excel/CSV formatda yuklab oling</small>
+                    </div>
+                    <button class="btn btn-success fw-semibold" onclick="downloadExcel()">
+                        <i class="bi bi-file-earmark-excel-fill me-1"></i> Export to Excel (Joriy Fan)
+                    </button>
+                </div>
+                <div class="alert alert-danger d-flex align-items-center justify-content-between">
+                    <div>
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <strong>Red Line Ro'yxati:</strong> Quyida 25% dan ko'p dars qoldirgan ATT-241 talabalari ko'rsatilgan.
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-danger">
+                            <tr>
+                                <th>#</th>
+                                <th>Talaba F.I.Sh</th>
+                                <th>Guruh</th>
+                                <th>Jami Darslar</th>
+                                <th>Qoldirilgan Darslar</th>
+                                <th>Qoldirish Foizi (%)</th>
+                                <th>Batafsil</th>
+                            </tr>
+                        </thead>
+                        <tbody id="redLineReportBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ==================== MODAL 1: START CLASS (SELECT CLASS_TYPE & GENERATE QR) ==================== -->
+<div class="modal fade" id="qrClassModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-qr-code-scan me-2"></i>Start Class — Darsni Boshlash (ATT-241)
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3 p-3 rounded-3 bg-light border">
+                    <label class="form-label fw-bold small text-primary mb-1">
+                        <i class="bi bi-sliders me-1"></i>Mashg'ulot turini tanlang (Class Type):
+                    </label>
+                    <div class="input-group">
+                        <select id="modalClassTypeSelect" class="form-select fw-semibold">
+                            <option value="Ma'ruza">Ma'ruza (Lecture)</option>
+                            <option value="Amaliy">Amaliy (Practice)</option>
+                        </select>
+                        <button id="generateQrSessionBtn" class="btn btn-primary fw-semibold" type="button">
+                            <i class="bi bi-arrow-repeat me-1"></i> QR Yangilash
+                        </button>
+                    </div>
+                </div>
+
+                <div class="text-center">
+                    <div class="mb-2">
+                        <span class="badge bg-primary-subtle text-primary-emphasis fs-6" id="qrSubjectBadge"></span>
+                    </div>
+                    <p class="text-muted small mb-2">
+                        Talabalar ushbu QR-kodni skanerlaganda tanlangan mashg'ulot turi bo'yicha davomat avtomatik <b>"Keldi"</b> deb saqlanadi.
+                    </p>
+
+                    <div class="qr-box my-2" id="qrcodeContainer"></div>
+
+                    <div class="mt-2">
+                        <a id="qrDirectLink" href="#" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-box-arrow-up-right me-1"></i> QR Havolani yangi oynada ochish
+                        </a>
+                    </div>
+                </div>
+
+                <div class="mt-3 pt-3 border-top text-start">
+                    <label class="form-label fw-semibold small text-secondary">
+                        <i class="bi bi-phone-vibrate text-success me-1"></i>Tezkor QR Skaner Simulyatsiyasi (Talabani tanlab bosing):
+                    </label>
+                    <div class="input-group">
+                        <select id="simulateQrStudentSelect" class="form-select form-select-sm"></select>
+                        <button id="simulateQrScanBtn" class="btn btn-success btn-sm fw-semibold" type="button">
+                            <i class="bi bi-qr-code me-1"></i> Skanerlash
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-3 text-start">
+                    <div class="small fw-bold text-secondary mb-1">QR orqali tasdiqlagan talabalar:</div>
+                    <div id="qrCheckedInList" class="d-flex flex-wrap gap-1">
+                        <span class="text-muted small fst-italic">Hozircha hech kim skanerlamadi...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Yopish</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== MODAL 2: ADD STUDENT ==================== -->
+<div class="modal fade" id="addStudentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form id="addStudentForm" class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-person-plus-fill text-primary me-2"></i>ATT-241 Guruhiga Talaba Qo'shish</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">F.I.Sh <span class="text-danger">*</span></label>
+                    <input type="text" id="newStudentName" class="form-control" placeholder="Masalan: Karimov Jasur" required>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Username (Login) <span class="text-danger">*</span></label>
+                        <input type="text" id="newStudentUsername" class="form-control" placeholder="jasur_att241" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Parol <span class="text-danger">*</span></label>
+                        <input type="text" id="newStudentPassword" class="form-control" value="abc123!" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Guruh <span class="text-danger">*</span></label>
+                    <input type="text" id="newStudentGroup" class="form-control fw-semibold" value="ATT-241" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Email (ixtiyoriy)</label>
+                    <input type="email" id="newStudentEmail" class="form-control" placeholder="jasur@att241.uz">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Bekor qilish</button>
+                <button type="submit" class="btn btn-primary">Qo'shish</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ==================== MODAL 3: STUDENT STATISTICS (NO STREAK) ==================== -->
+<div class="modal fade" id="studentStatsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-bar-chart-line-fill text-primary me-2"></i>
+                    <span id="statsStudentName">Talaba statistikasi</span>
+                    <span id="statsStudentGroup" class="badge bg-secondary ms-2"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3 mb-4 text-center">
+                    <div class="col-md-4">
+                        <div class="border rounded-3 p-3 bg-light">
+                            <div class="text-muted small">Qoldirilgan Foiz (Hemis)</div>
+                            <h3 class="fw-bold mb-1" id="statsPercentage">0%</h3>
+                            <div class="progress" style="height: 8px;">
+                                <div id="statsProgressBar" class="progress-bar bg-success" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded-3 p-3 bg-light">
+                            <div class="text-muted small">Aktiv Darslar (Semestr)</div>
+                            <h3 class="fw-bold text-success mb-0" id="statsPresentDays">36</h3>
+                            <small class="text-muted">Semestr normasi: <span id="statsTotalDays">36</span> dars</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded-3 p-3 bg-light">
+                            <div class="text-muted small">Qoldirilgan Darslar (36 dan)</div>
+                            <h3 class="fw-bold text-danger mb-0" id="statsAbsentDays">0 / 36</h3>
+                            <small id="statsRedLineBadge" class="badge bg-success">Normal (0%)</small>
+                        </div>
+                    </div>
+                </div>
+
+                <h6 class="fw-bold text-secondary mb-2">
+                    <i class="bi bi-calendar-x text-danger me-1"></i> Qatnashmagan darslari ro'yxati:
+                </h6>
+                <div class="table-responsive border rounded-3" style="max-height: 260px; overflow-y: auto;">
+                    <table class="table table-sm table-striped align-middle mb-0">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th>#</th>
+                                <th>Sana &amp; Turi</th>
+                                <th>Fan</th>
+                                <th>O'qituvchi</th>
+                                <th>Sabab / Izoh</th>
+                            </tr>
+                        </thead>
+                        <tbody id="absentDaysTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1090;" id="toastContainer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const subjectSelect = document.getElementById('subjectSelect');
+    const classTypeSelect = document.getElementById('classTypeSelect');
+    const modalClassTypeSelect = document.getElementById('modalClassTypeSelect');
+    const dateInput = document.getElementById('attendanceDate');
+    const searchInput = document.getElementById('searchInput');
+    const tableBody = document.getElementById('attendanceTableBody');
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    const saveAttendanceBtn = document.getElementById('saveAttendanceBtn');
+
+    dateInput.valueAsDate = new Date();
+
+    let allSubjects = [];
+    let allStudents = [];
+    let attendanceMap = {};
+    let activeQrToken = null;
+    let qrPollInterval = null;
+
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const bgClass = type === 'success' ? 'text-bg-success'
+                      : type === 'danger' ? 'text-bg-danger'
+                      : type === 'warning' ? 'text-bg-warning'
+                      : 'text-bg-primary';
+        const icon = type === 'success' ? 'bi-check-circle-fill'
+                   : type === 'danger' ? 'bi-exclamation-triangle-fill'
+                   : 'bi-info-circle-fill';
+
+        const el = document.createElement('div');
+        el.className = `toast align-items-center ${bgClass} border-0 shadow`;
+        el.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body fw-semibold d-flex align-items-center gap-2">
+                    <i class="bi ${icon} fs-5"></i>
+                    <span>${message}</span>
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        container.appendChild(el);
+        const t = new bootstrap.Toast(el, { delay: 3500 });
+        t.show();
+        el.addEventListener('hidden.bs.toast', () => el.remove());
+    }
+
+    function getConditionArrowHtml(stats) {
+        if (!stats || stats.trend === 'neutral') {
+            return `<span class="condition-arrow arrow-neutral" title="Hali davomat tarixi yo'q"><i class="bi bi-dash"></i></span>`;
+        }
+        if (stats.trend === 'up') {
+            return `<span class="condition-arrow arrow-up" title="${stats.trend_label}"><i class="bi bi-arrow-up"></i></span>`;
+        }
+        return `<span class="condition-arrow arrow-down" title="${stats.trend_label}"><i class="bi bi-arrow-down"></i></span>`;
+    }
+
+    // Collapsible Sidebar Toggle (Smooth Desktop & Mobile Responsive)
+    window.toggleSidebar = function() {
+        if (window.innerWidth < 992) {
+            document.body.classList.toggle('sidebar-mobile-open');
+        } else {
+            document.body.classList.toggle('sidebar-collapsed');
+        }
+    };
+
+    window.closeMobileSidebar = function() {
+        document.body.classList.remove('sidebar-mobile-open');
+    };
+
+    window.switchSection = function(sectionId, linkEl) {
+        document.querySelectorAll('.portal-section').forEach(s => s.classList.add('d-none'));
+        document.getElementById(sectionId).classList.remove('d-none');
+
+        document.querySelectorAll('#sidebarNav .nav-link').forEach(l => l.classList.remove('active'));
+        if (linkEl) linkEl.classList.add('active');
+
+        if (window.innerWidth < 992) {
+            closeMobileSidebar();
+        }
+    };
+
+    async function initPortal() {
+        await loadSubjects();
+        await loadAttendanceAndStudents();
+    }
+
+    async function loadSubjects() {
+        const currentVal = subjectSelect.value;
+        const res = await fetch('/api/subjects');
+        allSubjects = await res.json();
+
+        if (allSubjects.length === 0) {
+            subjectSelect.innerHTML = `<option value="">-- Biriktirilgan fanlar yo'q --</option>`;
+            document.getElementById('noSubjectBanner').classList.remove('d-none');
+        } else {
+            document.getElementById('noSubjectBanner').classList.add('d-none');
+            subjectSelect.innerHTML = '';
+            allSubjects.forEach((subj, idx) => {
+                const selected = (currentVal && parseInt(currentVal) === subj.id) || (!currentVal && idx === 0) ? 'selected' : '';
+                subjectSelect.innerHTML += `<option value="${subj.id}" ${selected}>${subj.localized_name || subj.name}</option>`;
+            });
+            syncClassTypeForSubject();
+        }
+
+        renderSubjectsSection();
+        updateSelectedSubjectBanner();
+    }
+
+    function syncClassTypeForSubject() {
+        const subjId = parseInt(subjectSelect.value);
+        const subj = allSubjects.find(s => s.id === subjId);
+        if (!subj) return;
+
+        if (subj.allowed_class_types && subj.allowed_class_types.length > 0) {
+            if (!subj.allowed_class_types.includes(classTypeSelect.value)) {
+                classTypeSelect.value = subj.allowed_class_types[0];
+            }
+        }
+        modalClassTypeSelect.value = classTypeSelect.value;
+    }
+
+    function updateSelectedSubjectBanner() {
+        const bar = document.getElementById('selectedSubjectInfoBar');
+        const subjId = parseInt(subjectSelect.value);
+        const subj = allSubjects.find(s => s.id === subjId);
+        if (!subj) {
+            bar.classList.add('d-none');
+            return;
+        }
+        bar.classList.remove('d-none');
+        const cType = classTypeSelect.value;
+        bar.innerHTML = `
+            <div>
+                <i class="bi bi-journal-text me-1"></i>
+                <strong>Fan:</strong> ${subj.localized_name || subj.name}
+                <span class="badge bg-primary ms-1">${cType}</span>
+            </div>
+            <div class="d-flex flex-wrap gap-3">
+                <span><i class="bi bi-easel me-1"></i><strong>Ma'ruza:</strong> ${subj.lecture_teacher}</span>
+                <span><i class="bi bi-laptop me-1"></i><strong>Amaliy:</strong> ${subj.practical_teacher}</span>
+            </div>
+        `;
+    }
+
+    async function loadAttendanceAndStudents() {
+        const subjectId = subjectSelect.value;
+        const classType = classTypeSelect.value;
+        const selectedDate = dateInput.value;
+
+        updateSelectedSubjectBanner();
+
+        try {
+            const studentsUrl = subjectId ? `/api/students?subject_id=${subjectId}` : '/api/students';
+            const attUrl = subjectId
+                ? `/api/attendance?subject_id=${subjectId}&class_type=${encodeURIComponent(classType)}&date=${selectedDate}`
+                : `/api/attendance?date=${selectedDate}`;
+
+            const [stRes, attRes] = await Promise.all([fetch(studentsUrl), fetch(attUrl)]);
+            allStudents = await stRes.json();
+            const attRecords = await attRes.json();
+
+            attendanceMap = {};
+            allStudents.forEach(s => {
+                attendanceMap[s.id] = { status: 'present', note: '' };
+            });
+            attRecords.forEach(r => {
+                attendanceMap[r.student_id] = { status: r.status, note: r.note || '' };
+            });
+
+            renderQuickRankingsWidget();
+            renderTable();
+            renderStudentsDirectory();
+            renderReportsSection();
+        } catch (err) {
+            showToast("Ma'lumotlarni yuklashda xatolik!", "danger");
+        }
+    }
+
+    function renderQuickRankingsWidget() {
+        const topContainer = document.getElementById('top5WidgetList');
+        const bottomContainer = document.getElementById('bottom5WidgetList');
+
+        if (!allStudents || allStudents.length === 0) {
+            topContainer.innerHTML = `<div class="text-muted small py-2">Ma'lumot yo'q</div>`;
+            bottomContainer.innerHTML = `<div class="text-muted small py-2">Ma'lumot yo'q</div>`;
+            return;
+        }
+
+        const sortedTop = [...allStudents].sort((a, b) => {
+            const aStats = a.subject_stats || a.overall_stats || {};
+            const bStats = b.subject_stats || b.overall_stats || {};
+            return (aStats.absent_count || 0) - (bStats.absent_count || 0);
+        }).slice(0, 5);
+
+        const sortedBottom = [...allStudents].sort((a, b) => {
+            const aStats = a.subject_stats || a.overall_stats || {};
+            const bStats = b.subject_stats || b.overall_stats || {};
+            return (bStats.absent_count || 0) - (aStats.absent_count || 0);
+        }).slice(0, 5);
+
+        topContainer.innerHTML = sortedTop.map((st, idx) => {
+            const stats = st.subject_stats || st.overall_stats || {};
+            return `
+                <div class="ranking-item d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge rounded-pill bg-success">${idx + 1}</span>
+                        ${getConditionArrowHtml(stats)}
+                        <div>
+                            <span class="fw-bold text-dark small">${st.full_name}</span>
+                            <span class="text-muted small ms-1">(${st.group_name})</span>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <small class="text-muted">${stats.absent_count || 0}/36 dars</small>
+                        <span class="badge bg-success">Qoldirgan: ${stats.missed_percentage || 0}%</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        bottomContainer.innerHTML = sortedBottom.map((st, idx) => {
+            const stats = st.subject_stats || st.overall_stats || {};
+            const isRed = st.is_red_line;
+            return `
+                <div class="ranking-item d-flex justify-content-between align-items-center ${isRed ? 'border-danger-subtle bg-danger-subtle bg-opacity-25' : ''}">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge rounded-pill ${isRed ? 'bg-danger' : 'bg-secondary'}">${idx + 1}</span>
+                        ${getConditionArrowHtml(stats)}
+                        <div>
+                            <span class="fw-bold ${isRed ? 'text-danger' : 'text-dark'} small">${st.full_name}</span>
+                            <span class="text-muted small ms-1">(${st.group_name})</span>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <small class="text-danger fw-semibold">${stats.absent_count || 0} / 36 dars</small>
+                        <span class="badge ${isRed ? 'bg-danger' : 'bg-warning text-dark'}">Qoldirgan: ${stats.missed_percentage || 0}%</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function getFilteredStudents() {
+        const q = searchInput.value.trim().toLowerCase();
+        return allStudents.filter(s => {
+            return !q || s.full_name.toLowerCase().includes(q) || s.username.toLowerCase().includes(q);
+        });
+    }
+
+    function renderTable() {
+        const filtered = getFilteredStudents();
+        if (filtered.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-muted">Talabalar topilmadi.</td></tr>`;
+            updateStats();
+            return;
+        }
+
+        tableBody.innerHTML = filtered.map((st, idx) => {
+            const state = attendanceMap[st.id] || { status: 'present', note: '' };
+            const isPresent = state.status === 'present';
+            const stats = st.subject_stats || st.overall_stats || {};
+            const isRedLine = stats.is_red_line;
+            const missedPct = stats.missed_percentage ?? 0;
+            const absentCnt = stats.absent_count ?? 0;
+            const fixedTotal = stats.fixed_semester_total || 36;
+
+            return `
+                <tr data-student-id="${st.id}" class="${isRedLine ? 'row-red-line' : ''}">
+                    <td class="fw-semibold text-secondary">${idx + 1}</td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            ${getConditionArrowHtml(stats)}
+                            <div>
+                                <div class="fw-bold text-dark d-flex align-items-center gap-1 flex-wrap">
+                                    <span>${st.full_name}</span>
+                                    ${isRedLine ? `<span class="badge bg-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i>RED LINE (&gt;25%)</span>` : ''}
+                                </div>
+                                <small class="text-muted">@${st.username} &bull; ${stats.trend_label || ''}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="badge bg-primary-subtle text-primary-emphasis fw-bold">${st.group_name}</span></td>
+                    <td>
+                        <div class="fw-bold ${isRedLine ? 'text-danger' : (absentCnt > 0 ? 'text-warning-emphasis' : 'text-success')}">
+                            Qoldirilgan foiz: ${missedPct}%
+                        </div>
+                        <small class="text-muted">Qoldirildi: <b>${absentCnt} / ${fixedTotal}</b> dars</small>
+                    </td>
+                    <td class="text-center">
+                        <input type="checkbox" class="form-check-input attendance-check student-checkbox"
+                            ${isPresent ? 'checked' : ''} onchange="handleCheckboxChange(this, ${st.id})">
+                    </td>
+                    <td>
+                        <span class="badge status-badge ${isPresent ? 'bg-success' : 'bg-danger'}">
+                            ${isPresent ? 'Keldi' : 'Kelmadi'}
+                        </span>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm student-note"
+                            placeholder="Sabab yoki izoh..." value="${(state.note || '').replace(/"/g, '&quot;')}"
+                            oninput="handleNoteChange(this, ${st.id})">
+                    </td>
+                    <td class="text-end">
+                        <button class="btn btn-outline-primary btn-sm me-1" onclick="openStudentStats(${st.id})" title="Statistika">
+                            <i class="bi bi-bar-chart-line me-1"></i>Statistika
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" onclick="deleteStudent(${st.id})" title="O'chirish">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        updateStats();
+    }
+
+    window.handleCheckboxChange = function(cb, studentId) {
+        const row = cb.closest('tr');
+        const badge = row.querySelector('.status-badge');
+        const status = cb.checked ? 'present' : 'absent';
+        attendanceMap[studentId] = attendanceMap[studentId] || { status: 'present', note: '' };
+        attendanceMap[studentId].status = status;
+
+        badge.className = `badge status-badge ${cb.checked ? 'bg-success' : 'bg-danger'}`;
+        badge.textContent = cb.checked ? 'Keldi' : 'Kelmadi';
+        updateStats();
+    };
+
+    window.handleNoteChange = function(input, studentId) {
+        attendanceMap[studentId] = attendanceMap[studentId] || { status: 'present', note: '' };
+        attendanceMap[studentId].note = input.value;
+    };
+
+    function updateStats() {
+        const checkboxes = [...document.querySelectorAll('.student-checkbox')];
+        const total = checkboxes.length;
+        const present = checkboxes.filter(c => c.checked).length;
+        const absent = total - present;
+        const redLineTotal = allStudents.filter(s => s.is_red_line).length;
+
+        document.getElementById('totalCount').textContent = total;
+        document.getElementById('presentCount').textContent = present;
+        document.getElementById('absentCount').textContent = absent;
+        document.getElementById('redLineCount').textContent = redLineTotal;
+
+        selectAllCheckbox.checked = total > 0 && present === total;
+    }
+
+    selectAllCheckbox.addEventListener('change', (e) => {
+        const checked = e.target.checked;
+        document.querySelectorAll('#attendanceTableBody tr[data-student-id]').forEach(row => {
+            const id = parseInt(row.getAttribute('data-student-id'));
+            const cb = row.querySelector('.student-checkbox');
+            cb.checked = checked;
+            handleCheckboxChange(cb, id);
+        });
+    });
+
+    saveAttendanceBtn.addEventListener('click', async () => {
+        const subjectId = subjectSelect.value;
+        const classType = classTypeSelect.value;
+        if (!subjectId) {
+            showToast("Avval fanni (Subject) tanlang!", "warning");
+            subjectSelect.focus();
+            return;
+        }
+
+        const filtered = getFilteredStudents();
+        const records = filtered.map(st => ({
+            student_id: st.id,
+            status: (attendanceMap[st.id]?.status) || 'present',
+            note: (attendanceMap[st.id]?.note) || ''
+        }));
+
+        saveAttendanceBtn.disabled = true;
+        saveAttendanceBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Saqlanmoqda...`;
+
+        try {
+            const res = await fetch('/api/attendance/bulk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    subject_id: parseInt(subjectId),
+                    class_type: classType,
+                    date: dateInput.value,
+                    records: records
+                })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showToast(data.message, 'success');
+                await loadAttendanceAndStudents();
+            } else {
+                showToast(data.error || "Xatolik!", 'danger');
+            }
+        } catch (err) {
+            showToast("Server xatoligi!", "danger");
+        } finally {
+            saveAttendanceBtn.disabled = false;
+            saveAttendanceBtn.innerHTML = `<i class="bi bi-floppy me-2"></i> Davomatni saqlash`;
+        }
+    });
+
+    async function requestNewQrCode(subjectId, classType) {
+        const res = await fetch('/api/qr/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                subject_id: parseInt(subjectId),
+                class_type: classType,
+                date: dateInput.value
+            })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            showToast(data.error || "Xatolik", "danger");
+            return false;
+        }
+
+        activeQrToken = data.token;
+        document.getElementById('qrSubjectBadge').textContent = `${data.subject_name} [${data.class_type}]`;
+        document.getElementById('qrDirectLink').href = data.checkin_url;
+
+        const qrContainer = document.getElementById('qrcodeContainer');
+        qrContainer.innerHTML = '';
+        new QRCode(qrContainer, {
+            text: data.checkin_url,
+            width: 205,
+            height: 205,
+            colorDark: "#0f172a",
+            colorLight: "#ffffff"
+        });
+        return true;
+    }
+
+    document.getElementById('startClassBtn').addEventListener('click', async () => {
+        const subjectId = subjectSelect.value;
+        if (!subjectId) {
+            showToast("Darsni boshlash uchun avval fanni (Subject) tanlang!", "warning");
+            return;
+        }
+
+        modalClassTypeSelect.value = classTypeSelect.value;
+        const ok = await requestNewQrCode(subjectId, modalClassTypeSelect.value);
+        if (!ok) return;
+
+        const simSelect = document.getElementById('simulateQrStudentSelect');
+        simSelect.innerHTML = allStudents.map(s => `<option value="${s.id}">${s.full_name} (${s.group_name})</option>`).join('');
+        document.getElementById('qrCheckedInList').innerHTML = `<span class="text-muted small fst-italic">Hozircha hech kim skanerlamadi...</span>`;
+
+        const modalEl = document.getElementById('qrClassModal');
+        const qrModal = new bootstrap.Modal(modalEl);
+        qrModal.show();
+        showToast(`Dars boshlandi (${modalClassTypeSelect.value})! QR kod tayyor.`, "success");
+
+        if (qrPollInterval) clearInterval(qrPollInterval);
+        qrPollInterval = setInterval(async () => {
+            if (!activeQrToken) return;
+            const stRes = await fetch(`/api/qr/status/${activeQrToken}`);
+            if (stRes.ok) {
+                const stData = await stRes.json();
+                renderQrCheckedInList(stData.checked_in_students || []);
+            }
+        }, 2500);
+
+        modalEl.addEventListener('hidden.bs.modal', () => {
+            if (qrPollInterval) clearInterval(qrPollInterval);
+            loadAttendanceAndStudents();
+        }, { once: true });
+    });
+
+    document.getElementById('generateQrSessionBtn').addEventListener('click', async () => {
+        const subjectId = subjectSelect.value;
+        classTypeSelect.value = modalClassTypeSelect.value;
+        await requestNewQrCode(subjectId, modalClassTypeSelect.value);
+        await loadAttendanceAndStudents();
+        showToast(`QR kod '${modalClassTypeSelect.value}' mashg'ulot turiga yangilandi!`, 'info');
+    });
+
+    modalClassTypeSelect.addEventListener('change', async () => {
+        const subjectId = subjectSelect.value;
+        classTypeSelect.value = modalClassTypeSelect.value;
+        await requestNewQrCode(subjectId, modalClassTypeSelect.value);
+        await loadAttendanceAndStudents();
+    });
+
+    function renderQrCheckedInList(names) {
+        const listEl = document.getElementById('qrCheckedInList');
+        if (!names || names.length === 0) return;
+        listEl.innerHTML = names.map(n => `<span class="badge bg-success"><i class="bi bi-check2 me-1"></i>${n}</span>`).join('');
+    }
+
+    document.getElementById('simulateQrScanBtn').addEventListener('click', async () => {
+        if (!activeQrToken) return;
+        const studentId = parseInt(document.getElementById('simulateQrStudentSelect').value);
+        const res = await fetch(`/qr-checkin/${activeQrToken}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ student_id: studentId })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            showToast(data.message, 'success');
+            const stRes = await fetch(`/api/qr/status/${activeQrToken}`);
+            if (stRes.ok) {
+                const stData = await stRes.json();
+                renderQrCheckedInList(stData.checked_in_students || []);
+            }
+            loadAttendanceAndStudents();
+        } else {
+            showToast(data.error || "Xatolik", "danger");
+        }
+    });
+
+    document.getElementById('addStudentForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const password = document.getElementById('newStudentPassword').value.trim();
+
+        const payload = {
+            full_name: document.getElementById('newStudentName').value.trim(),
+            username: document.getElementById('newStudentUsername').value.trim(),
+            password: password,
+            group_name: document.getElementById('newStudentGroup').value.trim() || 'ATT-241',
+            email: document.getElementById('newStudentEmail').value.trim()
+        };
+        const res = await fetch('/api/students', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('addStudentModal')).hide();
+            e.target.reset();
+            document.getElementById('newStudentPassword').value = 'abc123!';
+            document.getElementById('newStudentGroup').value = 'ATT-241';
+            showToast(data.message, 'success');
+            loadAttendanceAndStudents();
+        } else {
+            showToast(data.error || "Xatolik", 'danger');
+        }
+    });
+
+    window.deleteStudent = async function(id) {
+        if (!confirm("Talabani o'chirishni tasdiqlaysizmi?")) return;
+        const res = await fetch(`/api/students/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (res.ok) {
+            showToast(data.message, 'warning');
+            loadAttendanceAndStudents();
+        }
+    };
+
+    window.openStudentStats = async function(studentId) {
+        const modal = new bootstrap.Modal(document.getElementById('studentStatsModal'));
+        modal.show();
+        const subjQuery = subjectSelect.value ? `?subject_id=${subjectSelect.value}` : '';
+        const res = await fetch(`/api/students/${studentId}${subjQuery}`);
+        const data = await res.json();
+        if (!res.ok) return;
+
+        const stats = data.stats;
+        const fixedTotal = stats.fixed_semester_total || 36;
+        document.getElementById('statsStudentName').textContent = data.full_name;
+        document.getElementById('statsStudentGroup').textContent = data.group_name;
+        document.getElementById('statsPercentage').textContent = `${stats.missed_percentage}%`;
+        document.getElementById('statsPresentDays').textContent = `${stats.remaining_classes} / ${fixedTotal}`;
+        document.getElementById('statsTotalDays').textContent = fixedTotal;
+        document.getElementById('statsAbsentDays').textContent = `${stats.absent_count} / ${fixedTotal}`;
+
+        const redBadge = document.getElementById('statsRedLineBadge');
+        if (stats.is_red_line) {
+            redBadge.className = 'badge bg-danger';
+            redBadge.textContent = `RED LINE (${stats.missed_percentage}% > 25%)`;
+        } else {
+            redBadge.className = 'badge bg-success';
+            redBadge.textContent = `Normal (Qoldirgan: ${stats.missed_percentage}%)`;
+        }
+
+        const bar = document.getElementById('statsProgressBar');
+        bar.style.width = `${Math.min(100, stats.missed_percentage)}%`;
+        bar.className = 'progress-bar ' + (stats.is_red_line ? 'bg-danger' : (stats.absent_count > 0 ? 'bg-warning' : 'bg-success'));
+
+        const tbody = document.getElementById('absentDaysTableBody');
+        if (stats.missed_records.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center py-3 text-success fw-semibold">Qoldirilgan darslar yo'q!</td></tr>`;
+        } else {
+            tbody.innerHTML = stats.missed_records.map((r, i) => `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td class="fw-semibold">
+                        ${r.date}
+                        <span class="badge ${r.class_type === "Ma'ruza" ? 'bg-primary' : 'bg-success'} ms-1">${r.class_type}</span>
+                    </td>
+                    <td class="fw-semibold">${r.localized_subject_name || r.subject_name}</td>
+                    <td>${r.teacher_name || '-'}</td>
+                    <td>${r.note || '<span class="text-muted fst-italic">Sabab ko\'rsatilmagan</span>'}</td>
+                </tr>
+            `).join('');
+        }
+    };
+
+    function renderSubjectsSection() {
+        const container = document.getElementById('subjectsCardsContainer');
+        if (allSubjects.length === 0) {
+            container.innerHTML = `<div class="col-12 text-muted">Sizga biriktirilgan fanlar topilmadi.</div>`;
+            return;
+        }
+        container.innerHTML = allSubjects.map(s => `
+            <div class="col-md-6 col-xl-4">
+                <div class="card border p-3 h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                            <h6 class="fw-bold text-dark mb-0">${s.localized_name || s.name}</h6>
+                            <div class="d-flex gap-1 flex-shrink-0">
+                                ${s.allowed_class_types.map(t => `<span class="badge bg-info text-dark">${t}</span>`).join('')}
+                            </div>
+                        </div>
+                        <div class="small text-muted mb-1">
+                            <i class="bi bi-easel text-primary me-1"></i>Ma'ruza: <strong class="text-dark">${s.lecture_teacher}</strong>
+                        </div>
+                        <div class="small text-muted mb-3">
+                            <i class="bi bi-laptop text-success me-1"></i>Amaliy: <strong class="text-dark">${s.practical_teacher}</strong>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-primary w-100" onclick="selectSubjectAndType(${s.id}, 'Ma\\'ruza')">
+                            Ma'ruza yo'qlama
+                        </button>
+                        <button class="btn btn-sm btn-outline-success w-100" onclick="selectSubjectAndType(${s.id}, 'Amaliy')">
+                            Amaliy yo'qlama
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    window.selectSubjectAndType = function(subjectId, cType) {
+        subjectSelect.value = subjectId;
+        classTypeSelect.value = cType;
+        switchSection('homeSection', document.querySelector('[data-section="homeSection"]'));
+        loadAttendanceAndStudents();
+    };
+
+    function renderStudentsDirectory() {
+        const tbody = document.getElementById('allStudentsDirectoryBody');
+        tbody.innerHTML = allStudents.map((s, i) => {
+            const stStats = s.subject_stats || s.overall_stats || {};
+            return `
+            <tr class="${s.is_red_line ? 'row-red-line' : ''}">
+                <td>${i + 1}</td>
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        ${getConditionArrowHtml(stStats)}
+                        <span class="fw-bold">${s.full_name}</span>
+                    </div>
+                </td>
+                <td><code>@${s.username}</code></td>
+                <td><span class="badge bg-primary">${s.group_name}</span></td>
+                <td>
+                    <span class="fw-bold ${s.is_red_line ? 'text-danger' : 'text-success'}">Qoldirilgan foiz: ${stStats.missed_percentage || 0}%</span>
+                    <small class="text-muted ms-1">(${stStats.absent_count || 0} / 36 dars)</small>
+                </td>
+                <td>
+                    ${s.is_red_line
+                        ? '<span class="badge bg-danger">RED LINE (&gt;25% Missed)</span>'
+                        : '<span class="badge bg-success">Normal</span>'}
+                </td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-outline-primary" onclick="openStudentStats(${s.id})">
+                        <i class="bi bi-bar-chart-line me-1"></i>Ko'rish
+                    </button>
+                </td>
+            </tr>
+            `;
+        }).join('');
+    }
+
+    function renderReportsSection() {
+        const redStudents = allStudents.filter(s => s.is_red_line);
+        const tbody = document.getElementById('redLineReportBody');
+        if (redStudents.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-3 text-success">25% dan ko'p (10+ dars / 36 dan) dars qoldirgan talabalar yo'q.</td></tr>`;
+            return;
+        }
+        tbody.innerHTML = redStudents.map((s, i) => {
+            const stStats = s.subject_stats || s.overall_stats || {};
+            return `
+            <tr>
+                <td>${i + 1}</td>
+                <td class="fw-bold text-danger">${s.full_name}</td>
+                <td>${s.group_name}</td>
+                <td>36 dars (18+18)</td>
+                <td class="fw-bold text-danger">${stStats.absent_count || 0} / 36</td>
+                <td><span class="badge bg-danger">${stStats.missed_percentage || 0}%</span></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-dark" onclick="openStudentStats(${s.id})">Tarixni ko'rish</button>
+                </td>
+            </tr>
+            `;
+        }).join('');
+    }
+
+    window.downloadExcel = function() {
+        const params = new URLSearchParams();
+        if (subjectSelect.value) params.append('subject_id', subjectSelect.value);
+        if (classTypeSelect.value) params.append('class_type', classTypeSelect.value);
+        if (dateInput.value) params.append('date', dateInput.value);
+
+        window.location.href = `/api/attendance/export?${params.toString()}`;
+        showToast("Tanlangan fan bo'yicha Excel (CSV) hisobot yuklab olindi!", "success");
+    };
+
+    document.getElementById('exportCsvTopBtn').addEventListener('click', downloadExcel);
+    document.getElementById('exportCsvBottomBtn').addEventListener('click', downloadExcel);
+
+    subjectSelect.addEventListener('change', () => {
+        syncClassTypeForSubject();
+        loadAttendanceAndStudents();
+    });
+    classTypeSelect.addEventListener('change', loadAttendanceAndStudents);
+    dateInput.addEventListener('change', loadAttendanceAndStudents);
+    searchInput.addEventListener('input', renderTable);
+
+    initPortal();
+</script>
+</body>
+</html>

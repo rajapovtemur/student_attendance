@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Talabalar Davomati Tizimi</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f6f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .navbar-brand {
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+        }
+        .attendance-check {
+            width: 1.45em;
+            height: 1.45em;
+            cursor: pointer;
+        }
+        .attendance-check:checked {
+            background-color: #198754;
+            border-color: #198754;
+        }
+        .row-present {
+            background-color: rgba(25, 135, 84, 0.05);
+        }
+        .row-absent {
+            background-color: rgba(220, 53, 69, 0.04);
+        }
+        .stat-card {
+            border-left: 4px solid;
+        }
+        .stat-total { border-left-color: #0d6efd; }
+        .stat-present { border-left-color: #198754; }
+        .stat-absent { border-left-color: #dc3545; }
+    </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm mb-4">
+    <div class="container">
+        <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+            <i class="bi bi-journal-check fs-4"></i>
+            <span>Talabalar Davomati</span>
+        </a>
+        <div class="d-flex gap-2">
+            <button id="exportExcelBtn" class="btn btn-outline-light btn-sm fw-semibold">
+                <i class="bi bi-file-earmark-excel-fill me-1"></i> Excelga yuklab olish
+            </button>
+            <button class="btn btn-light btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#addStudentModal">
+                <i class="bi bi-person-plus-fill me-1"></i> Yangi talaba qo'shish
+            </button>
+        </div>
+    </div>
+</nav>
+
+<div class="container pb-5">
+    <!-- Statistika Kartalari -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card stat-card stat-total p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small">Jami talabalar (ro'yxatda)</div>
+                        <h4 class="mb-0 fw-bold" id="totalCount">0</h4>
+                    </div>
+                    <i class="bi bi-people fs-2 text-primary opacity-75"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card stat-present p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small">Darsda qatnashmoqda (Keldi)</div>
+                        <h4 class="mb-0 fw-bold text-success" id="presentCount">0</h4>
+                    </div>
+                    <i class="bi bi-check-circle fs-2 text-success opacity-75"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card stat-absent p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small">Qatnashmayapti (Kelmadi)</div>
+                        <h4 class="mb-0 fw-bold text-danger" id="absentCount">0</h4>
+                    </div>
+                    <i class="bi bi-x-circle fs-2 text-danger opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Asosiy Jadval Karti -->
+    <div class="card p-4">
+        <!-- Filtr va Qidiruv qatori -->
+        <div class="row g-3 align-items-end mb-4">
+            <div class="col-md-3">
+                <label for="attendanceDate" class="form-label fw-semibold small text-secondary">Yo'qlama sanasi</label>
+                <input type="date" id="attendanceDate" class="form-control">
+            </div>
+            <div class="col-md-3">
+                <label for="groupFilter" class="form-label fw-semibold small text-secondary">Guruh bo'yicha saralash</label>
+                <select id="groupFilter" class="form-select">
+                    <option value="">Barcha guruhlar</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="searchInput" class="form-label fw-semibold small text-secondary">Ism-familiya bo'yicha qidiruv</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white text-secondary"><i class="bi bi-search"></i></span>
+                    <input type="text" id="searchInput" class="form-control" placeholder="Talaba ismini yozing...">
+                </div>
+            </div>
+            <div class="col-md-2 text-md-end">
+                <div class="form-check form-switch d-inline-flex align-items-center gap-2 pt-2">
+                    <input class="form-check-input attendance-check" type="checkbox" id="selectAllCheckbox">
+                    <label class="form-check-label fw-semibold small" for="selectAllCheckbox">Barchasi</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Talabalar Jadvali -->
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th>F.I.Sh</th>
+                        <th>Guruh</th>
+                        <th class="text-center" style="width: 130px;">Keldi (Check)</th>
+                        <th style="width: 120px;">Holati</th>
+                        <th>Izoh (ixtiyoriy)</th>
+                        <th class="text-end" style="width: 170px;">Amallar</th>
+                    </tr>
+                </thead>
+                <tbody id="studentsTableBody">
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">Yuklanmoqda...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pastki tugmalar -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mt-4 pt-3 border-top gap-2">
+            <button id="exportExcelBottomBtn" class="btn btn-outline-primary px-3 py-2 fw-semibold">
+                <i class="bi bi-download me-1"></i> Jadvalni Excel (CSV) formatda yuklash
+            </button>
+            <button id="saveAttendanceBtn" class="btn btn-success px-4 py-2 fw-semibold">
+                <i class="bi bi-floppy me-2"></i> Davomatni saqlash
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 1. Yangi talaba qo'shish Modal oynasi -->
+<div class="modal fade" id="addStudentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form id="addStudentForm" class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-person-plus me-2 text-primary"></i>Yangi talaba qo'shish</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Yopish"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">F.I.Sh <span class="text-danger">*</span></label>
+                    <input type="text" id="studentName" class="form-control" placeholder="Masalan: Aliyev Vali" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Guruh raqami <span class="text-danger">*</span></label>
+                    <input type="text" id="studentGroup" class="form-control" placeholder="Masalan: 210-21" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Email (ixtiyoriy)</label>
+                    <input type="email" id="studentEmail" class="form-control" placeholder="student@example.com">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Bekor qilish</button>
+                <button type="submit" class="btn btn-primary">Qo'shish</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 2. Talaba Statistikasi Modal oynasi -->
+<div class="modal fade" id="studentStatsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-bar-chart-line-fill text-primary me-2"></i>
+                    <span id="statsStudentName">Talaba statistikasi</span>
+                    <span id="statsStudentGroup" class="badge bg-secondary ms-2"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Yopish"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Foiz va qisqacha ko'rsatkichlar -->
+                <div class="row g-3 mb-4 text-center">
+                    <div class="col-md-4">
+                        <div class="border rounded-3 p-3 bg-light">
+                            <div class="text-muted small">Umumiy davomat foizi</div>
+                            <h3 class="fw-bold mb-1" id="statsPercentage">0%</h3>
+                            <div class="progress" style="height: 8px;">
+                                <div id="statsProgressBar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded-3 p-3 bg-light">
+                            <div class="text-muted small">Qatnashgan darslar</div>
+                            <h3 class="fw-bold text-success mb-0" id="statsPresentDays">0</h3>
+                            <small class="text-muted">Jami <span id="statsTotalDays">0</span> ta darsdan</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="border rounded-3 p-3 bg-light">
+                            <div class="text-muted small">Qoldirilgan darslar (Kelmadi)</div>
+                            <h3 class="fw-bold text-danger mb-0" id="statsAbsentDays">0</h3>
+                            <small class="text-muted">kun qatnashmagan</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Qatnashmagan kunlar ro'yxati -->
+                <h6 class="fw-bold text-secondary mb-2">
+                    <i class="bi bi-calendar-x text-danger me-1"></i> Qatnashmagan kunlari ro'yxati:
+                </h6>
+                <div class="table-responsive border rounded-3" style="max-height: 260px; overflow-y: auto;">
+                    <table class="table table-sm table-striped align-middle mb-0">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th style="width: 50px;">#</th>
+                                <th>Sana</th>
+                                <th>Holat</th>
+                                <th>Sabab / Izoh</th>
+                            </tr>
+                        </thead>
+                        <tbody id="absentDaysTableBody">
+                            <tr>
+                                <td colspan="4" class="text-center py-3 text-muted">Ma'lumot yuklanmoqda...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Yopish</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 3. Toast Bildirishnomalar Konteyneri (Ekranning pastki o'ng burchagida) -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1080;" id="toastContainer"></div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    const dateInput = document.getElementById('attendanceDate');
+    const groupFilter = document.getElementById('groupFilter');
+    const searchInput = document.getElementById('searchInput');
+    const tableBody = document.getElementById('studentsTableBody');
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    const saveAttendanceBtn = document.getElementById('saveAttendanceBtn');
+
+    // Bugungi sanani o'rnatish
+    dateInput.valueAsDate = new Date();
+
+    let allStudents = [];
+    // student_id -> { status: 'present'|'absent', note: '' }
+    let attendanceMap = {};
+
+    // Toast bildirishnoma chiqarish funksiyasi
+    function showToast(message, type = 'success') {
+        const toastContainer = document.getElementById('toastContainer');
+        const bgClass = type === 'success' ? 'text-bg-success'
+                      : type === 'danger' ? 'text-bg-danger'
+                      : type === 'warning' ? 'text-bg-warning'
+                      : 'text-bg-primary';
+        const iconClass = type === 'success' ? 'bi-check-circle-fill'
+                        : type === 'danger' ? 'bi-exclamation-triangle-fill'
+                        : 'bi-info-circle-fill';
+
+        const toastEl = document.createElement('div');
+        toastEl.className = `toast align-items-center ${bgClass} border-0 shadow`;
+        toastEl.setAttribute('role', 'alert');
+        toastEl.setAttribute('aria-live', 'assertive');
+        toastEl.setAttribute('aria-atomic', 'true');
+
+        toastEl.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body fw-semibold d-flex align-items-center gap-2">
+                    <i class="bi ${iconClass} fs-5"></i>
+                    <span>${message}</span>
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Yopish"></button>
+            </div>
+        `;
+
+        toastContainer.appendChild(toastEl);
+        const toast = new bootstrap.Toast(toastEl, { delay: 3500 });
+        toast.show();
+
+        toastEl.addEventListener('hidden.bs.toast', () => {
+            toastEl.remove();
+        });
+    }
+
+    // Ma'lumotlarni serverdan yuklash
+    async function loadData() {
+        const selectedDate = dateInput.value;
+        const selectedGroup = groupFilter.value;
+
+        try {
+            const [studentsRes, attRes] = await Promise.all([
+                fetch('/students'),
+                fetch(`/attendance?date=${selectedDate}`)
+            ]);
+
+            allStudents = await studentsRes.json();
+            const attRecords = await attRes.json();
+
+            updateGroupOptions(allStudents, selectedGroup);
+
+            // Har bir talaba uchun boshlang'ich davomat holatini tayyorlash
+            attendanceMap = {};
+            allStudents.forEach(s => {
+                attendanceMap[s.id] = { status: 'present', note: '' };
+            });
+            attRecords.forEach(item => {
+                attendanceMap[item.student_id] = {
+                    status: item.status,
+                    note: item.note || ''
+                };
+            });
+
+            renderTable();
+        } catch (err) {
+            showToast("Ma'lumotlarni yuklashda xatolik yuz berdi!", "danger");
+        }
+    }
+
+    function updateGroupOptions(students, currentSelected) {
+        const groups = [...new Set(students.map(s => s.group_name))].sort();
+        groupFilter.innerHTML = `<option value="">Barcha guruhlar</option>`;
+        groups.forEach(g => {
+            const selected = g === currentSelected ? 'selected' : '';
+            groupFilter.innerHTML += `<option value="${g}" ${selected}>${g}</option>`;
+        });
+    }
+
+    // Guruh va qidiruv bo'yicha filtrlangan talabalarni olish
+    function getFilteredStudents() {
+        const selectedGroup = groupFilter.value;
+        const query = searchInput.value.trim().toLowerCase();
+
+        return allStudents.filter(s => {
+            const matchesGroup = !selectedGroup || s.group_name === selectedGroup;
+            const matchesSearch = !query || s.full_name.toLowerCase().includes(query);
+            return matchesGroup && matchesSearch;
+        });
+    }
+
+    // Jadvalni chizish
+    function renderTable() {
+        const filtered = getFilteredStudents();
+
+        if (filtered.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">
+                        Talabalar topilmadi. Qidiruv so'zini o'zgartiring yoki yangi talaba qo'shing.
+                    </td>
+                </tr>
+            `;
+            updateStats();
+            return;
+        }
+
+        tableBody.innerHTML = filtered.map((student, index) => {
+            const state = attendanceMap[student.id] || { status: 'present', note: '' };
+            const isPresent = state.status === 'present';
+            const note = state.note || '';
+
+            return `
+                <tr data-student-id="${student.id}" class="${isPresent ? 'row-present' : 'row-absent'}">
+                    <td class="fw-semibold text-secondary">${index + 1}</td>
+                    <td class="fw-semibold">${student.full_name}</td>
+                    <td><span class="badge bg-secondary-subtle text-secondary-emphasis">${student.group_name}</span></td>
+                    <td class="text-center">
+                        <input type="checkbox" class="form-check-input attendance-check student-checkbox"
+                            ${isPresent ? 'checked' : ''} onchange="handleCheckboxChange(this, ${student.id})">
+                    </td>
+                    <td>
+                        <span class="badge status-badge ${isPresent ? 'bg-success' : 'bg-danger'}">
+                            ${isPresent ? 'Keldi' : 'Kelmadi'}
+                        </span>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm student-note"
+                            placeholder="Sababi yoki izoh..." value="${note.replace(/"/g, '&quot;')}"
+                            oninput="handleNoteChange(this, ${student.id})">
+                    </td>
+                    <td class="text-end">
+                        <button class="btn btn-outline-primary btn-sm me-1" onclick="openStudentStats(${student.id})" title="Talaba statistikasi">
+                            <i class="bi bi-bar-chart-line me-1"></i>Statistika
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" onclick="deleteStudent(${student.id})" title="Talabani o'chirish">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        updateStats();
+    }
+
+    // Checkbox o'zgarganda xotiradagi attendanceMap va qator dizaynini yangilash
+    window.handleCheckboxChange = function(checkbox, studentId) {
+        const row = checkbox.closest('tr');
+        const badge = row.querySelector('.status-badge');
+        const status = checkbox.checked ? 'present' : 'absent';
+
+        if (!attendanceMap[studentId]) {
+            attendanceMap[studentId] = { status: status, note: '' };
+        } else {
+            attendanceMap[studentId].status = status;
+        }
+
+        if (checkbox.checked) {
+            row.classList.remove('row-absent');
+            row.classList.add('row-present');
+            badge.className = 'badge status-badge bg-success';
+            badge.textContent = 'Keldi';
+        } else {
+            row.classList.remove('row-present');
+            row.classList.add('row-absent');
+            badge.className = 'badge status-badge bg-danger';
+            badge.textContent = 'Kelmadi';
+        }
+        updateStats();
+    };
+
+    // Izoh yozilganda xotirada saqlab turish (qidiruv paytida yo'qolmasligi uchun)
+    window.handleNoteChange = function(input, studentId) {
+        if (!attendanceMap[studentId]) {
+            attendanceMap[studentId] = { status: 'present', note: input.value };
+        } else {
+            attendanceMap[studentId].note = input.value;
+        }
+    };
+
+    // Statistikani hisoblash
+    function updateStats() {
+        const checkboxes = [...document.querySelectorAll('.student-checkbox')];
+        const total = checkboxes.length;
+        const present = checkboxes.filter(cb => cb.checked).length;
+        const absent = total - present;
+
+        document.getElementById('totalCount').textContent = total;
+        document.getElementById('presentCount').textContent = present;
+        document.getElementById('absentCount').textContent = absent;
+
+        selectAllCheckbox.checked = total > 0 && present === total;
+    }
+
+    // Barchasini belgilash / olib tashlash
+    selectAllCheckbox.addEventListener('change', (e) => {
+        const checked = e.target.checked;
+        document.querySelectorAll('#studentsTableBody tr[data-student-id]').forEach(row => {
+            const studentId = parseInt(row.getAttribute('data-student-id'));
+            const cb = row.querySelector('.student-checkbox');
+            cb.checked = checked;
+            handleCheckboxChange(cb, studentId);
+        });
+    });
+
+    // Davomatni saqlash
+    saveAttendanceBtn.addEventListener('click', async () => {
+        const filtered = getFilteredStudents();
+        if (filtered.length === 0) {
+            showToast("Saqlash uchun talabalar ro'yxati bo'sh!", "warning");
+            return;
+        }
+
+        const records = filtered.map(student => {
+            const state = attendanceMap[student.id] || { status: 'present', note: '' };
+            return {
+                student_id: student.id,
+                status: state.status,
+                note: (state.note || '').trim()
+            };
+        });
+
+        saveAttendanceBtn.disabled = true;
+        saveAttendanceBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Saqlanmoqda...`;
+
+        try {
+            const res = await fetch('/attendance/bulk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    date: dateInput.value,
+                    records: records
+                })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showToast(data.message || "Muvaffaqiyatli bajarildi!", 'success');
+                loadData();
+            } else {
+                showToast(data.error || "Xatolik yuz berdi", 'danger');
+            }
+        } catch (err) {
+            showToast("Server bilan bog'lanishda xatolik!", 'danger');
+        } finally {
+            saveAttendanceBtn.disabled = false;
+            saveAttendanceBtn.innerHTML = `<i class="bi bi-floppy me-2"></i> Davomatni saqlash`;
+        }
+    });
+
+    // Yangi talaba qo'shish
+    document.getElementById('addStudentForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const full_name = document.getElementById('studentName').value.trim();
+        const group_name = document.getElementById('studentGroup').value.trim();
+        const email = document.getElementById('studentEmail').value.trim() || null;
+
+        try {
+            const res = await fetch('/students', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ full_name, group_name, email })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                bootstrap.Modal.getInstance(document.getElementById('addStudentModal')).hide();
+                e.target.reset();
+                showToast(data.message || "Yangi talaba muvaffaqiyatli qo'shildi!", "success");
+                loadData();
+            } else {
+                showToast(data.error || "Xatolik yuz berdi", "danger");
+            }
+        } catch (err) {
+            showToast("Server xatoligi!", "danger");
+        }
+    });
+
+    // Talabani o'chirish
+    window.deleteStudent = async function(studentId) {
+        if (!confirm("Haqiqatan ham ushbu talabani o'chirmoqchimisiz?")) return;
+        try {
+            const res = await fetch(`/students/${studentId}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (res.ok) {
+                showToast(data.message || "Talaba o'chirildi", "warning");
+                loadData();
+            }
+        } catch (err) {
+            showToast("O'chirishda xatolik!", "danger");
+        }
+    };
+
+    // Talaba statistikasini Modal oynada ko'rsatish
+    window.openStudentStats = async function(studentId) {
+        const statsModal = new bootstrap.Modal(document.getElementById('studentStatsModal'));
+        statsModal.show();
+
+        document.getElementById('absentDaysTableBody').innerHTML = `
+            <tr><td colspan="4" class="text-center py-3 text-muted">Yuklanmoqda...</td></tr>
+        `;
+
+        try {
+            const res = await fetch(`/students/${studentId}`);
+            const data = await res.json();
+            if (!res.ok) {
+                showToast("Statistikani yuklab bo'lmadi", "danger");
+                return;
+            }
+
+            const stats = data.stats;
+            document.getElementById('statsStudentName').textContent = data.full_name;
+            document.getElementById('statsStudentGroup').textContent = data.group_name;
+            document.getElementById('statsPercentage').textContent = `${stats.attendance_percentage}%`;
+            document.getElementById('statsPresentDays').textContent = stats.present_days;
+            document.getElementById('statsTotalDays').textContent = stats.total_days;
+            document.getElementById('statsAbsentDays').textContent = stats.absent_days;
+
+            const progressBar = document.getElementById('statsProgressBar');
+            progressBar.style.width = `${stats.attendance_percentage}%`;
+            progressBar.className = 'progress-bar ' + (
+                stats.attendance_percentage >= 75 ? 'bg-success' :
+                stats.attendance_percentage >= 50 ? 'bg-warning' : 'bg-danger'
+            );
+
+            const absentBody = document.getElementById('absentDaysTableBody');
+            if (stats.absent_records.length === 0) {
+                absentBody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center py-3 text-success fw-semibold">
+                            <i class="bi bi-emoji-smile me-1"></i> Talaba birorta ham dars qoldirmagan!
+                        </td>
+                    </tr>
+                `;
+            } else {
+                absentBody.innerHTML = stats.absent_records.map((rec, i) => `
+                    <tr>
+                        <td>${i + 1}</td>
+                        <td class="fw-semibold">${rec.date}</td>
+                        <td><span class="badge bg-danger">Kelmadi</span></td>
+                        <td>${rec.note || '<span class="text-muted fst-italic">Izoh kiritilmagan</span>'}</td>
+                    </tr>
+                `).join('');
+            }
+        } catch (err) {
+            showToast("Statistikani olishda xatolik!", "danger");
+        }
+    };
+
+    // Excelga (CSV) yuklab olish funksiyasi
+    function downloadExcel() {
+        const selectedDate = dateInput.value;
+        const selectedGroup = groupFilter.value;
+        const params = new URLSearchParams();
+        if (selectedDate) params.append('date', selectedDate);
+        if (selectedGroup) params.append('group_name', selectedGroup);
+
+        window.location.href = `/attendance/export?${params.toString()}`;
+        showToast("Hisobot Excel (CSV) formatida yuklab olindi!", "success");
+    }
+
+    document.getElementById('exportExcelBtn').addEventListener('click', downloadExcel);
+    document.getElementById('exportExcelBottomBtn').addEventListener('click', downloadExcel);
+
+    // Sana, guruh yoki qidiruv o'zgarganda jadvalni yangilash
+    dateInput.addEventListener('change', loadData);
+    groupFilter.addEventListener('change', renderTable);
+    searchInput.addEventListener('input', renderTable);
+
+    // Dastlabki yuklash
+    loadData();
+</script>
+</body>
+</html>

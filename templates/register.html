@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ro'yxatdan o'tish | ATT-241 University Portal</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #1d4ed8 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            padding: 1.5rem;
+        }
+        .register-wrapper {
+            max-width: 980px;
+            width: 100%;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
+            background: #ffffff;
+        }
+        .brand-panel {
+            background: linear-gradient(160deg, #1e40af 0%, #0f172a 100%);
+            color: #fff;
+            padding: 3rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .pw-rule {
+            font-size: 0.82rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin-bottom: 0.25rem;
+            color: #64748b;
+            transition: color 0.2s;
+        }
+        .pw-rule.valid {
+            color: #16a34a;
+            font-weight: 600;
+        }
+        .pw-rule.invalid {
+            color: #dc2626;
+        }
+    </style>
+</head>
+<body>
+
+<div class="register-wrapper row g-0">
+    <!-- Left Branding Column -->
+    <div class="col-lg-5 brand-panel">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-4">
+                <div class="bg-primary bg-gradient p-2 rounded-3 text-white d-inline-flex">
+                    <i class="bi bi-mortarboard-fill fs-3"></i>
+                </div>
+                <div>
+                    <h4 class="mb-0 fw-bold">University Portal</h4>
+                    <small class="text-info fw-semibold">ATT-241 Registration</small>
+                </div>
+            </div>
+            <h3 class="fw-bold mb-2">Yangi Hisob Yaratish</h3>
+            <div class="badge bg-info text-dark mb-3">Yo'nalish: Axborot tizimlari va texnologiyalari</div>
+            <p class="text-white-50 mb-4 small">
+                O'qituvchilar uchun username avtomatik ravishda <code>[familiya]_oqituvchi_davomat</code> formatida shakllantiriladi.
+            </p>
+            <div class="p-3 rounded-3 bg-white bg-opacity-10 small">
+                <div class="fw-bold mb-2"><i class="bi bi-shield-check text-info me-1"></i> Qat'iy parol talablari:</div>
+                <ul class="mb-0 ps-3 text-white-50">
+                    <li>Kamida 8 ta belgidan iborat bo'lishi shart</li>
+                    <li>Tarkibida harflar (A-Z, a-z) bo'lishi shart</li>
+                    <li>Kamida bitta maxsus belgi (@, #, $, !, %) bo'lishi shart</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="small text-white-50 mt-4 pt-3 border-top border-secondary border-opacity-25">
+            &copy; 2026 Axborot tizimlari va texnologiyalari (ATT-241)
+        </div>
+    </div>
+
+    <!-- Right Registration Form Column -->
+    <div class="col-lg-7 p-4 p-md-5">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <h3 class="fw-bold text-dark mb-1">{{ t.register_title }}</h3>
+                <p class="text-muted small mb-0">{{ t.register_subtitle }}</p>
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle fw-semibold" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-translate me-1 text-primary"></i> {{ supported_languages[current_lang] }}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                    {% for code, name in supported_languages.items() %}
+                    <li>
+                        <a class="dropdown-item d-flex justify-content-between align-items-center {% if code == current_lang %}active fw-bold{% endif %}"
+                           href="/set-language/{{ code }}">
+                            <span>{{ name }}</span>
+                            {% if code == current_lang %}<i class="bi bi-check2 ms-2"></i>{% endif %}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <div id="alertContainer">
+            {% if error %}
+            <div class="alert alert-danger d-flex align-items-center gap-2 py-2 small" role="alert">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span>{{ error }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <form id="registerForm" method="POST" action="/register" novalidate>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold small text-secondary">To'liq F.I.Sh <span class="text-danger">*</span></label>
+                    <input type="text" name="full_name" id="fullName" list="teacherNamesList" class="form-control" placeholder="Masalan: Ramanov Muhiddin" required>
+                    <datalist id="teacherNamesList">
+                        <option value="Ramanov Muhiddin">
+                        <option value="Allashkurov Dilshod">
+                        <option value="Raximbayev Musobek">
+                        <option value="Bazarbayev Murat">
+                        <option value="Abdullayev Abdulla">
+                        <option value="O'qituvchi">
+                    </datalist>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold small text-secondary">Rolni tanlang (Role) <span class="text-danger">*</span></label>
+                    <select name="role" id="roleSelect" class="form-select fw-semibold" required>
+                        <option value="student" selected>Talaba (Student)</option>
+                        <option value="teacher">O'qituvchi (Teacher)</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold small text-secondary">Username (Login) <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light">@</span>
+                        <input type="text" name="username" id="username" class="form-control" placeholder="vali_att241" required>
+                    </div>
+                    <small class="text-primary d-none" id="teacherUsernameHint" style="font-size: 0.74rem;">
+                        Format: <code>[familiya]_oqituvchi_davomat</code>
+                    </small>
+                </div>
+
+                <div class="col-md-6" id="groupFieldWrapper">
+                    <label class="form-label fw-semibold small text-secondary">Guruh (Group) <span class="text-danger">*</span></label>
+                    <input type="text" name="group_name" id="groupName" class="form-control fw-semibold" value="ATT-241" required>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label fw-semibold small text-secondary">Email manzili (ixtiyoriy)</label>
+                    <input type="email" name="email" id="email" class="form-control" placeholder="user@att241.uz">
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label fw-semibold small text-secondary">Parol (Password) <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="bi bi-key"></i></span>
+                        <input type="password" name="password" id="password" class="form-control" placeholder="Kamida 8 belgi, harf va maxsus belgi (@, #, $)" required>
+                        <button class="btn btn-outline-secondary" type="button" id="togglePwBtn">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+
+                    <!-- Live Password Checklist -->
+                    <div class="mt-2 p-2 rounded bg-light border">
+                        <div class="pw-rule" id="ruleLength">
+                            <i class="bi bi-circle"></i> Kamida 8 ta belgidan iborat (At least 8 characters)
+                        </div>
+                        <div class="pw-rule" id="ruleLetter">
+                            <i class="bi bi-circle"></i> Kamida bitta harf mavjud (Contains letters a-z, A-Z)
+                        </div>
+                        <div class="pw-rule" id="ruleSymbol">
+                            <i class="bi bi-circle"></i> Kamida bitta maxsus belgi mavjud (@, #, $, !, % va h.k.)
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn btn-primary w-100 py-2 fw-semibold mt-4 shadow-sm">
+                <i class="bi bi-person-check-fill me-1"></i> Ro'yxatdan o'tish (Sign Up)
+            </button>
+        </form>
+
+        <div class="text-center mt-4 pt-3 border-top">
+            <span class="text-muted small">Already have an account?</span>
+            <a href="/login" class="fw-bold text-primary text-decoration-none ms-1">
+                Login (Tizimga kirish) <i class="bi bi-box-arrow-in-right"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const roleSelect = document.getElementById('roleSelect');
+    const fullNameInput = document.getElementById('fullName');
+    const usernameInput = document.getElementById('username');
+    const teacherUsernameHint = document.getElementById('teacherUsernameHint');
+    const groupWrapper = document.getElementById('groupFieldWrapper');
+    const groupInput = document.getElementById('groupName');
+    const passwordInput = document.getElementById('password');
+    const registerForm = document.getElementById('registerForm');
+    const alertContainer = document.getElementById('alertContainer');
+
+    function updateTeacherUsernameIfApplicable() {
+        if (roleSelect.value === 'teacher') {
+            const words = (fullNameInput.value || '').match(/[A-Za-z]+/g);
+            const lastname = words && words.length > 0 ? words[0].toLowerCase() : 'ustoz';
+            usernameInput.value = `${lastname}_oqituvchi_davomat`;
+        }
+    }
+
+    roleSelect.addEventListener('change', () => {
+        if (roleSelect.value === 'teacher') {
+            groupWrapper.classList.add('d-none');
+            groupInput.removeAttribute('required');
+            teacherUsernameHint.classList.remove('d-none');
+            updateTeacherUsernameIfApplicable();
+        } else {
+            groupWrapper.classList.remove('d-none');
+            groupInput.setAttribute('required', 'required');
+            teacherUsernameHint.classList.add('d-none');
+            if (!groupInput.value) groupInput.value = 'ATT-241';
+            if (usernameInput.value.endsWith('_oqituvchi_davomat')) {
+                usernameInput.value = '';
+            }
+        }
+    });
+
+    fullNameInput.addEventListener('input', updateTeacherUsernameIfApplicable);
+
+    document.getElementById('togglePwBtn').addEventListener('click', () => {
+        const isPw = passwordInput.type === 'password';
+        passwordInput.type = isPw ? 'text' : 'password';
+    });
+
+    function checkPasswordRules(pw) {
+        const hasLen = pw.length >= 8;
+        const hasLetter = /[A-Za-z]/.test(pw);
+        const hasSymbol = /[^A-Za-z0-9\s]/.test(pw);
+
+        updateRuleUI('ruleLength', hasLen);
+        updateRuleUI('ruleLetter', hasLetter);
+        updateRuleUI('ruleSymbol', hasSymbol);
+
+        return { hasLen, hasLetter, hasSymbol, isValid: hasLen && hasLetter && hasSymbol };
+    }
+
+    function updateRuleUI(id, valid) {
+        const el = document.getElementById(id);
+        const icon = el.querySelector('i');
+        if (valid) {
+            el.classList.add('valid');
+            el.classList.remove('invalid');
+            icon.className = 'bi bi-check-circle-fill text-success';
+        } else {
+            el.classList.remove('valid');
+            el.classList.add('invalid');
+            icon.className = 'bi bi-x-circle-fill text-danger';
+        }
+    }
+
+    passwordInput.addEventListener('input', () => {
+        checkPasswordRules(passwordInput.value);
+    });
+
+    function showError(msg) {
+        alertContainer.innerHTML = `
+            <div class="alert alert-danger d-flex align-items-center gap-2 py-2 small" role="alert">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span>${msg}</span>
+            </div>
+        `;
+    }
+
+    registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const pw = passwordInput.value;
+        const rules = checkPasswordRules(pw);
+
+        if (!rules.hasLen) {
+            showError("Parol kamida 8 ta belgidan iborat bo'lishi shart!");
+            return;
+        }
+        if (!rules.hasLetter) {
+            showError("Parolda kamida bitta harf (a-z, A-Z) bo'lishi shart!");
+            return;
+        }
+        if (!rules.hasSymbol) {
+            showError("Parolda kamida bitta maxsus belgi (@, #, $, !, %) bo'lishi shart!");
+            return;
+        }
+
+        const payload = {
+            full_name: fullNameInput.value.trim(),
+            username: usernameInput.value.trim(),
+            role: roleSelect.value,
+            group_name: groupInput.value.trim() || 'ATT-241',
+            email: document.getElementById('email').value.trim(),
+            password: pw
+        };
+
+        try {
+            const res = await fetch('/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (res.ok && data.redirect) {
+                window.location.href = data.redirect;
+            } else {
+                showError(data.error || "Ro'yxatdan o'tishda xatolik!");
+            }
+        } catch (err) {
+            showError("Server bilan bog'lanishda xatolik!");
+        }
+    });
+</script>
+</body>
+</html>

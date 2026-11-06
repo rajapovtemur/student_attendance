@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="{{ current_lang }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ t.admin_cabinet }} | {{ t.portal_brand }}</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --sidebar-width: 275px;
+        }
+        body {
+            background-color: #f1f5f9;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            overflow-x: hidden;
+        }
+        /* Collapsible Dark Left Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: linear-gradient(180deg, #0f172a 0%, #1e293b 65%, #0f172a 100%);
+            color: #fff;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1040;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+            overflow-y: auto;
+        }
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.78);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.4rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .sidebar .nav-link:hover {
+            background: rgba(59, 130, 246, 0.2);
+            color: #ffffff;
+        }
+        .sidebar .nav-link.active {
+            background: linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+        }
+        .main-content {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        body.sidebar-collapsed .sidebar {
+            transform: translateX(-100%);
+        }
+        body.sidebar-collapsed .main-content {
+            margin-left: 0;
+        }
+        .sidebar-toggle-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #0f172a;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+        .sidebar-toggle-btn:hover {
+            background: #2563eb;
+            border-color: #2563eb;
+            color: #ffffff;
+        }
+        .sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(2px);
+            z-index: 1035;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        body.sidebar-mobile-open .sidebar-backdrop {
+            opacity: 1;
+            visibility: visible;
+        }
+        .topbar {
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 0.9rem 1.75rem;
+        }
+        .card {
+            border: none;
+            border-radius: 14px;
+            box-shadow: 0 2px 12px rgba(15, 23, 42, 0.05);
+        }
+        .portal-nav-tabs {
+            border-bottom: 2px solid #e2e8f0;
+            gap: 0.5rem;
+        }
+        .portal-nav-tabs .nav-link {
+            border: none;
+            border-bottom: 3px solid transparent;
+            border-radius: 10px 10px 0 0;
+            color: #475569;
+            font-weight: 700;
+            padding: 0.75rem 1.25rem;
+            transition: all 0.2s;
+        }
+        .portal-nav-tabs .nav-link.active {
+            color: #2563eb;
+            background: #ffffff;
+            border-bottom-color: #2563eb;
+        }
+        .multi-checkbox-box {
+            max-height: 170px;
+            overflow-y: auto;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 0.65rem 0.85rem;
+            background: #f8fafc;
+        }
+        @media (max-width: 991.98px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            body.sidebar-mobile-open .sidebar {
+                transform: translateX(0);
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+            }
+            .main-content {
+                margin-left: 0 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Mobile Sidebar Overlay Backdrop -->
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeMobileSidebar()"></div>
+
+<!-- Sidebar -->
+<aside class="sidebar p-3" id="appSidebar">
+    <div>
+        <div class="d-flex align-items-center justify-content-between gap-2 px-2 py-2 mb-3 border-bottom border-secondary border-opacity-25 pb-3">
+            <div class="d-flex align-items-center gap-2">
+                <div class="bg-warning text-dark p-2 rounded-3 d-inline-flex">
+                    <i class="bi bi-shield-lock-fill fs-4"></i>
+                </div>
+                <div>
+                    <h6 class="mb-0 fw-bold">{{ t.portal_brand }}</h6>
+                    <small class="text-warning fw-semibold">{{ t.admin_cabinet }}</small>
+                </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-light d-lg-none" onclick="closeMobileSidebar()" title="{{ t.close_btn }}">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <div class="px-2 mb-3">
+            <div class="p-2 rounded-3 bg-white bg-opacity-10 small">
+                <div class="text-white-50" style="font-size: 0.72rem;">{{ t.current_user_label }}:</div>
+                <div class="fw-bold text-white" style="font-size: 0.88rem;">{{ user.full_name }}</div>
+                <div class="text-info small" style="font-size: 0.72rem;">@{{ user.username }} ({{ user.role }})</div>
+            </div>
+        </div>
+
+        <ul class="nav flex-column" id="adminSidebarNav">
+            <li class="nav-item">
+                <a class="nav-link active" data-tab="teachers" onclick="switchAdminTab('teachers')">
+                    <i class="bi bi-person-workspace"></i>
+                    <span>{{ t.tab_teachers }}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-tab="students" onclick="switchAdminTab('students')">
+                    <i class="bi bi-people-fill"></i>
+                    <span>{{ t.tab_students }}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-tab="subjects" onclick="switchAdminTab('subjects')">
+                    <i class="bi bi-journal-code"></i>
+                    <span>{{ t.tab_subjects }}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-tab="groups" onclick="switchAdminTab('groups')">
+                    <i class="bi bi-diagram-3-fill"></i>
+                    <span>{{ t.tab_groups }}</span>
+                </a>
+            </li>
+            <li class="nav-item mt-3 pt-2 border-top border-secondary border-opacity-25">
+                <a class="nav-link" href="/settings">
+                    <i class="bi bi-gear-fill"></i>
+                    <span>{{ t.nav_settings }}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-info" href="/teacher">
+                    <i class="bi bi-easel2-fill"></i>
+                    <span>{{ t.teacher_cabinet }}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-info" href="/student">
+                    <i class="bi bi-mortarboard-fill"></i>
+                    <span>{{ t.student_cabinet }}</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="border-top border-secondary border-opacity-25 pt-3 px-2">
+        <a href="/logout" class="btn btn-outline-light w-100 btn-sm fw-semibold py-2">
+            <i class="bi bi-box-arrow-right me-1"></i> {{ t.logout }}
+        </a>
+    </div>
+</aside>
+
+<!-- Main Content -->
+<div class="main-content">
+    <header class="topbar d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <button type="button" id="sidebarToggleBtn" class="sidebar-toggle-btn shadow-sm" onclick="toggleSidebar()" title="{{ t.toggle_sidebar_title }}">
+                <i class="bi bi-list fs-4"></i>
+            </button>
+            <div>
+                <h5 class="mb-0 fw-bold text-dark">{{ t.admin_title }}</h5>
+                <small class="text-muted">{{ t.admin_subtitle }}</small>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <!-- 4-Language Switcher Dropdown -->
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary btn-sm fw-semibold dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-translate me-1 text-primary"></i> {{ supported_languages[current_lang] }}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                    {% for code, name in supported_languages.items() %}
+                    <li>
+                        <a class="dropdown-item d-flex justify-content-between align-items-center {% if code == current_lang %}active fw-bold{% endif %}"
+                           href="/set-language/{{ code }}">
+                            <span>{{ name }}</span>
+                            {% if code == current_lang %}<i class="bi bi-check2 ms-2"></i>{% endif %}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <a href="/settings" class="btn btn-outline-secondary btn-sm fw-semibold">
+                <i class="bi bi-gear-fill me-1"></i> {{ t.nav_settings }}
+            </a>
+            <button class="btn btn-primary btn-sm fw-semibold" onclick="openTeacherModal()">
+                <i class="bi bi-person-plus-fill me-1"></i> {{ t.add_teacher_btn }}
+            </button>
+            <button class="btn btn-success btn-sm fw-semibold" onclick="openStudentModal()">
+                <i class="bi bi-person-plus me-1"></i> {{ t.add_student_btn }}
+            </button>
+            <button class="btn btn-dark btn-sm fw-semibold" onclick="openSubjectModal()">
+                <i class="bi bi-journal-plus me-1"></i> {{ t.add_subject_btn }}
+            </button>
+        </div>
+    </header>
+
+    <div class="container-fluid p-4">
+        <!-- Summary KPI Row -->
+        <div class="row g-3 mb-4">
+            <div class="col-sm-6 col-xl-3">
+                <div class="card p-3 border-start border-4 border-primary">
+                    <div class="text-muted small">{{ t.tab_teachers }}</div>
+                    <h3 class="fw-bold mb-0 text-primary" id="kpiTeachersCount">0</h3>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card p-3 border-start border-4 border-success">
+                    <div class="text-muted small">{{ t.tab_students }}</div>
+                    <h3 class="fw-bold mb-0 text-success" id="kpiStudentsCount">0</h3>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card p-3 border-start border-4 border-warning">
+                    <div class="text-muted small">{{ t.tab_subjects }}</div>
+                    <h3 class="fw-bold mb-0 text-warning" id="kpiSubjectsCount">0</h3>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card p-3 border-start border-4 border-info">
+                    <div class="text-muted small">{{ t.tab_groups }}</div>
+                    <h3 class="fw-bold mb-0 text-info" id="kpiGroupsCount">0</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Panes (Switched via Left Sidebar Menu) -->
+        <div class="tab-content">
+            <!-- ==================== TAB 1: TEACHERS CRUD & PASSWORD RESET ==================== -->
+            <div class="tab-pane fade show active" id="adminPane-teachers">
+                <div class="card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0">
+                            <i class="bi bi-person-workspace text-primary me-2"></i>{{ t.teachers_management_title }}
+                        </h5>
+                        <button class="btn btn-primary btn-sm fw-semibold" onclick="openTeacherModal()">
+                            <i class="bi bi-plus-lg me-1"></i> {{ t.add_teacher_btn }}
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>{{ t.col_full_name }}</th>
+                                    <th>{{ t.col_username }}</th>
+                                    <th>{{ t.col_email }}</th>
+                                    <th>{{ t.assigned_subjects }}</th>
+                                    <th class="text-end" style="width: 280px;">{{ t.col_actions_password }}</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminTeachersBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== TAB 2: STUDENTS CRUD & PASSWORD RESET ==================== -->
+            <div class="tab-pane fade" id="adminPane-students">
+                <div class="card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0">
+                            <i class="bi bi-people-fill text-success me-2"></i>{{ t.students_management_title }}
+                        </h5>
+                        <button class="btn btn-success btn-sm fw-semibold" onclick="openStudentModal()">
+                            <i class="bi bi-plus-lg me-1"></i> {{ t.add_student_btn }}
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>{{ t.col_full_name }}</th>
+                                    <th>{{ t.col_username }}</th>
+                                    <th>{{ t.col_group }}</th>
+                                    <th>{{ t.col_hemis_status }}</th>
+                                    <th class="text-end" style="width: 280px;">{{ t.col_actions_password }}</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminStudentsBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== TAB 3: SUBJECTS CRUD ==================== -->
+            <div class="tab-pane fade" id="adminPane-subjects">
+                <div class="card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0">
+                            <i class="bi bi-journal-code text-warning me-2"></i>{{ t.subjects_management_title }}
+                        </h5>
+                        <button class="btn btn-dark btn-sm fw-semibold" onclick="openSubjectModal()">
+                            <i class="bi bi-plus-lg me-1"></i> {{ t.add_subject_btn }}
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>{{ t.col_code }}</th>
+                                    <th>{{ t.col_subject }}</th>
+                                    <th>{{ t.col_lecture_teacher }}</th>
+                                    <th>{{ t.col_practical_teacher }}</th>
+                                    <th>{{ t.col_teachers }}</th>
+                                    <th>{{ t.col_groups }}</th>
+                                    <th class="text-end" style="width: 170px;">{{ t.col_actions }}</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminSubjectsBody">
+                                {% for subj in subjects %}
+                                <tr>
+                                    <td><span class="badge bg-secondary">{{ subj.code }}</span></td>
+                                    <td class="fw-bold text-dark">{{ subj.localized_name }}</td>
+                                    <td>{{ subj.lecture_teacher }}</td>
+                                    <td>{{ subj.practical_teacher }}</td>
+                                    <td>
+                                        {% for t_user in subj.teachers %}
+                                        <span class="badge bg-primary-subtle text-primary-emphasis me-1 mb-1">{{ t_user.full_name }}</span>
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        {% for grp in subj.groups %}
+                                        <span class="badge bg-info text-dark me-1">{{ grp.name }}</span>
+                                        {% endfor %}
+                                    </td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-primary me-1" onclick="openSubjectModal({{ subj.id }})">
+                                            <i class="bi bi-pencil-square me-1"></i>{{ t.edit_btn }}
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteSubject({{ subj.id }})" title="{{ t.delete_btn }}">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== TAB 4: GROUPS MANAGEMENT ==================== -->
+            <div class="tab-pane fade" id="adminPane-groups">
+                <div class="card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0">
+                            <i class="bi bi-diagram-3-fill text-info me-2"></i>{{ t.groups_management_title }}
+                        </h5>
+                        <button class="btn btn-info text-dark btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#groupModal">
+                            <i class="bi bi-plus-lg me-1"></i> {{ t.add_group_btn }}
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>{{ t.col_group }}</th>
+                                    <th>{{ t.direction_label }}</th>
+                                    <th>{{ t.col_student_count }}</th>
+                                    <th>{{ t.assigned_subjects }}</th>
+                                    <th class="text-end">{{ t.col_actions }}</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminGroupsBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== MODAL 1: ADD / EDIT TEACHER ==================== -->
+<div class="modal fade" id="teacherModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form id="teacherForm" class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="teacherModalTitle">{{ t.modal_add_teacher }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="teacherIdInput">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">{{ t.col_full_name }} *</label>
+                    <input type="text" id="teacherFullName" class="form-control" placeholder="Ramanov Muhiddin" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">{{ t.col_username }} *</label>
+                    <input type="text" id="teacherUsername" class="form-control" placeholder="ramanov_oqituvchi_davomat" required>
+                </div>
+                <div class="mb-3" id="teacherPasswordRow">
+                    <label class="form-label fw-semibold small">{{ t.initial_password_label }} *</label>
+                    <input type="text" id="teacherPassword" class="form-control" value="123abc!">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">{{ t.col_email }}</label>
+                    <input type="email" id="teacherEmail" class="form-control" placeholder="teacher@university.uz">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label fw-semibold small text-primary">{{ t.assigned_subjects }}:</label>
+                    <div class="multi-checkbox-box" id="teacherSubjectsCheckboxes"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ t.cancel_btn }}</button>
+                <button type="submit" class="btn btn-primary fw-semibold">{{ t.save_btn }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ==================== MODAL 2: ADD / EDIT STUDENT ==================== -->
+<div class="modal fade" id="studentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form id="studentForm" class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="studentModalTitle">{{ t.modal_add_student }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="studentIdInput">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">{{ t.col_full_name }} *</label>
+                    <input type="text" id="studentFullName" class="form-control" placeholder="OTAXONOV DILSHODBEK" required>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small">{{ t.col_username }} *</label>
+                        <input type="text" id="studentUsername" class="form-control" placeholder="otaxonov_att241" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small">{{ t.col_group }} *</label>
+                        <input type="text" id="studentGroup" class="form-control fw-semibold" value="ATT-241" required>
+                    </div>
+                </div>
+                <div class="mb-3" id="studentPasswordRow">
+                    <label class="form-label fw-semibold small">{{ t.initial_password_label }} *</label>
+                    <input type="text" id="studentPassword" class="form-control" value="abc123!">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label fw-semibold small">{{ t.col_email }}</label>
+                    <input type="email" id="studentEmail" class="form-control" placeholder="student@att241.uz">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ t.cancel_btn }}</button>
+                <button type="submit" class="btn btn-success fw-semibold">{{ t.save_btn }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ==================== MODAL 3: ADD / EDIT SUBJECT ==================== -->
+<div class="modal fade" id="subjectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <form id="subjectForm" class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="subjectModalTitle">{{ t.modal_add_subject }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="subjectIdInput">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">{{ t.col_code }} *</label>
+                        <input type="text" id="subjectCode" class="form-control" placeholder="ATT-106" required>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label fw-semibold small">{{ t.col_subject }} (O'zbekcha - Lotin) *</label>
+                        <input type="text" id="subjectName" class="form-control" placeholder="Bulutli texnologiyalar" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">{{ t.col_subject }} (Ўзбекча - Кирилл)</label>
+                        <input type="text" id="subjectNameUzCyrl" class="form-control" placeholder="Булутли технологиялар">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">{{ t.col_subject }} (Русский)</label>
+                        <input type="text" id="subjectNameRu" class="form-control" placeholder="Облачные технологии">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">{{ t.col_subject }} (English)</label>
+                        <input type="text" id="subjectNameEn" class="form-control" placeholder="Cloud Technologies">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small">{{ t.col_lecture_teacher }} *</label>
+                        <input type="text" id="subjectLectureTeacher" class="form-control" placeholder="Ramanov Muhiddin" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small">{{ t.col_practical_teacher }} *</label>
+                        <input type="text" id="subjectPracticalTeacher" class="form-control" placeholder="Ramanov Muhiddin" required>
+                    </div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small text-primary">{{ t.assigned_teachers }}:</label>
+                        <div class="multi-checkbox-box" id="subjectTeachersCheckboxes"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small text-success">{{ t.assigned_groups }}:</label>
+                        <div class="multi-checkbox-box" id="subjectGroupsCheckboxes"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ t.cancel_btn }}</button>
+                <button type="submit" class="btn btn-primary fw-semibold">{{ t.save_btn }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ==================== MODAL 4: ADD GROUP ==================== -->
+<div class="modal fade" id="groupModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form id="groupForm" class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">{{ t.modal_add_group }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">{{ t.col_group }} *</label>
+                    <input type="text" id="groupNameInput" class="form-control" placeholder="ATT-242" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small">{{ t.direction_label }} *</label>
+                    <input type="text" id="groupMajorInput" class="form-control" value="{{ major_name }}" required>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label fw-semibold small text-primary">{{ t.assigned_subjects }}:</label>
+                    <div class="multi-checkbox-box" id="groupSubjectsCheckboxes"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ t.cancel_btn }}</button>
+                <button type="submit" class="btn btn-info text-dark fw-semibold">{{ t.save_btn }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ==================== MODAL 5: RESET PASSWORD FOR ANY USER ==================== -->
+<div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form id="resetPasswordForm" class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-key-fill me-2"></i>{{ t.reset_pw_btn }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="resetPwUserId">
+                <div class="p-3 rounded-3 bg-light border mb-3">
+                    <div class="small text-muted">{{ t.current_user_label }}:</div>
+                    <div class="fw-bold text-dark fs-6" id="resetPwUserName"></div>
+                    <code id="resetPwUserLogin"></code>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label fw-bold small">{{ t.new_password_label }} *</label>
+                    <input type="text" id="resetPwNewPassword" class="form-control fw-semibold" placeholder="abc123! / 123abc!" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ t.cancel_btn }}</button>
+                <button type="submit" class="btn btn-warning fw-bold">
+                    <i class="bi bi-check2-circle me-1"></i> {{ t.reset_pw_btn }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    window.I18N = {{ t | tojson }};
+    let adminData = { teachers: [], students: [], subjects: [], groups: [] };
+
+    // Safe HTML escaping so dynamic database names (e.g., O'qituvchi, Ma'ruza) never break DOM or translations
+    function escapeHtml(value) {
+        if (value === null || value === undefined) return '';
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    window.toggleSidebar = function() {
+        if (window.innerWidth < 992) {
+            document.body.classList.toggle('sidebar-mobile-open');
+        } else {
+            document.body.classList.toggle('sidebar-collapsed');
+        }
+    };
+
+    window.closeMobileSidebar = function() {
+        document.body.classList.remove('sidebar-mobile-open');
+    };
+
+    window.switchAdminTab = function(tabKey) {
+        const tabs = ['teachers', 'students', 'subjects', 'groups'];
+        tabs.forEach(k => {
+            const pane = document.getElementById(`adminPane-${k}`);
+            if (pane) {
+                pane.classList.toggle('show', k === tabKey);
+                pane.classList.toggle('active', k === tabKey);
+            }
+        });
+        document.querySelectorAll('#adminSidebarNav .nav-link[data-tab]').forEach(link => {
+            link.classList.toggle('active', link.getAttribute('data-tab') === tabKey);
+        });
+        if (window.innerWidth < 992) closeMobileSidebar();
+    };
+
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const el = document.createElement('div');
+        el.className = `toast align-items-center text-bg-${type} border-0 shadow`;
+        el.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body fw-semibold">${escapeHtml(message)}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        container.appendChild(el);
+        new bootstrap.Toast(el, { delay: 3500 }).show();
+    }
+
+    async function loadAdminOverview() {
+        const res = await fetch('/api/admin/overview');
+        if (!res.ok) return;
+        adminData = await res.json();
+
+        document.getElementById('kpiTeachersCount').textContent = adminData.teachers.length;
+        document.getElementById('kpiStudentsCount').textContent = adminData.students.length;
+        document.getElementById('kpiSubjectsCount').textContent = adminData.subjects.length;
+        document.getElementById('kpiGroupsCount').textContent = adminData.groups.length;
+
+        renderTeachersTable();
+        renderStudentsTable();
+        renderSubjectsTable();
+        renderGroupsTable();
+        populateGroupModalCheckboxes();
+    }
+
+    function renderTeachersTable() {
+        const tbody = document.getElementById('adminTeachersBody');
+        tbody.innerHTML = adminData.teachers.map((t, idx) => `
+            <tr>
+                <td>${idx + 1}</td>
+                <td class="fw-bold text-dark">${escapeHtml(t.full_name)}</td>
+                <td><code>@${escapeHtml(t.username)}</code></td>
+                <td>${escapeHtml(t.email || '-')}</td>
+                <td>
+                    ${(t.assigned_subject_names && t.assigned_subject_names.length > 0)
+                        ? t.assigned_subject_names.map(n => `<span class="badge bg-primary-subtle text-primary-emphasis me-1 mb-1">${escapeHtml(n)}</span>`).join('')
+                        : `<span class="text-muted small">${escapeHtml(window.I18N.unassigned)}</span>`}
+                </td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-warning fw-semibold me-1" onclick="openResetPasswordById('teacher', ${t.id})">
+                        <i class="bi bi-key-fill me-1"></i>${escapeHtml(window.I18N.reset_pw_btn)}
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="openTeacherModal(${t.id})" title="${escapeHtml(window.I18N.edit_btn)}">
+                        <i class="bi bi-pencil-square"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteTeacher(${t.id})" title="${escapeHtml(window.I18N.delete_btn)}">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function renderStudentsTable() {
+        const tbody = document.getElementById('adminStudentsBody');
+        tbody.innerHTML = adminData.students.map((s, idx) => {
+            const stStats = s.overall_stats || {};
+            const isRed = stStats.is_red_line;
+            return `
+            <tr class="${isRed ? 'table-danger' : ''}">
+                <td>${idx + 1}</td>
+                <td class="fw-bold text-dark">${escapeHtml(s.full_name)}</td>
+                <td><code>@${escapeHtml(s.username)}</code></td>
+                <td><span class="badge bg-info text-dark fw-bold">${escapeHtml(s.group_name)}</span></td>
+                <td>
+                    <span class="badge ${isRed ? 'bg-danger' : 'bg-success'}">${escapeHtml(window.I18N.missed_word)}: ${stStats.missed_percentage || 0}%</span>
+                    <small class="text-muted ms-1">(${stStats.absent_count || 0} / 36)</small>
+                </td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-warning fw-semibold me-1" onclick="openResetPasswordById('student', ${s.id})">
+                        <i class="bi bi-key-fill me-1"></i>${escapeHtml(window.I18N.reset_pw_btn)}
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="openStudentModal(${s.id})" title="${escapeHtml(window.I18N.edit_btn)}">
+                        <i class="bi bi-pencil-square"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteStudent(${s.id})" title="${escapeHtml(window.I18N.delete_btn)}">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            `;
+        }).join('');
+    }
+
+    function renderSubjectsTable() {
+        const tbody = document.getElementById('adminSubjectsBody');
+        tbody.innerHTML = adminData.subjects.map(subj => `
+            <tr>
+                <td><span class="badge bg-secondary">${escapeHtml(subj.code)}</span></td>
+                <td class="fw-bold text-dark">${escapeHtml(subj.localized_name || subj.name)}</td>
+                <td>${escapeHtml(subj.lecture_teacher)}</td>
+                <td>${escapeHtml(subj.practical_teacher)}</td>
+                <td>
+                    ${(subj.teacher_names || []).map(n => `<span class="badge bg-primary-subtle text-primary-emphasis me-1 mb-1">${escapeHtml(n)}</span>`).join('')}
+                </td>
+                <td>
+                    ${(subj.group_names || []).map(g => `<span class="badge bg-info text-dark me-1">${escapeHtml(g)}</span>`).join('')}
+                </td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="openSubjectModal(${subj.id})">
+                        <i class="bi bi-pencil-square me-1"></i>${escapeHtml(window.I18N.edit_btn)}
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteSubject(${subj.id})" title="${escapeHtml(window.I18N.delete_btn)}">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function renderGroupsTable() {
+        const tbody = document.getElementById('adminGroupsBody');
+        tbody.innerHTML = adminData.groups.map((g, idx) => `
+            <tr>
+                <td>${idx + 1}</td>
+                <td><span class="badge bg-info text-dark fs-6">${escapeHtml(g.name)}</span></td>
+                <td>${escapeHtml(g.major)}</td>
+                <td class="fw-bold">${g.student_count} ${escapeHtml(window.I18N.students_count_suffix)}</td>
+                <td>
+                    ${(g.subject_names || []).map(n => `<span class="badge bg-secondary-subtle text-secondary-emphasis me-1 mb-1">${escapeHtml(n)}</span>`).join('')}
+                </td>
+                <td class="text-end">
+                    ${g.name !== 'ATT-241' ? `
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteGroup(${g.id})" title="${escapeHtml(window.I18N.delete_btn)}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    ` : `<span class="badge bg-success">${escapeHtml(window.I18N.default_group_badge)}</span>`}
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function populateGroupModalCheckboxes() {
+        const box = document.getElementById('groupSubjectsCheckboxes');
+        box.innerHTML = adminData.subjects.map(s => `
+            <div class="form-check">
+                <input class="form-check-input grp-subj-cb" type="checkbox" value="${s.id}" id="grpSubj_${s.id}" checked>
+                <label class="form-check-label small" for="grpSubj_${s.id}">${escapeHtml(s.localized_name || s.name)}</label>
+            </div>
+        `).join('');
+    }
+
+    // Teacher Add / Edit Modal
+    window.openTeacherModal = function(teacherId = null) {
+        const t = teacherId ? adminData.teachers.find(x => x.id === teacherId) : null;
+        document.getElementById('teacherIdInput').value = t ? t.id : '';
+        document.getElementById('teacherModalTitle').textContent = t ? window.I18N.modal_edit_teacher : window.I18N.modal_add_teacher;
+        document.getElementById('teacherFullName').value = t ? t.full_name : '';
+        document.getElementById('teacherUsername').value = t ? t.username : '';
+        document.getElementById('teacherEmail').value = t ? (t.email || '') : '';
+        document.getElementById('teacherPasswordRow').classList.toggle('d-none', !!t);
+
+        const selectedSubjIds = t ? (t.assigned_subject_ids || []) : [];
+        document.getElementById('teacherSubjectsCheckboxes').innerHTML = adminData.subjects.map(s => `
+            <div class="form-check">
+                <input class="form-check-input teacher-subj-cb" type="checkbox" value="${s.id}" id="tSubj_${s.id}"
+                    ${selectedSubjIds.includes(s.id) ? 'checked' : ''}>
+                <label class="form-check-label small" for="tSubj_${s.id}">${escapeHtml(s.localized_name || s.name)}</label>
+            </div>
+        `).join('');
+
+        new bootstrap.Modal(document.getElementById('teacherModal')).show();
+    };
+
+    document.getElementById('teacherFullName').addEventListener('input', (e) => {
+        const idVal = document.getElementById('teacherIdInput').value;
+        if (!idVal) {
+            const words = (e.target.value || '').match(/[A-Za-z]+/g);
+            const lastname = words && words.length > 0 ? words[0].toLowerCase() : 'ustoz';
+            document.getElementById('teacherUsername').value = `${lastname}_oqituvchi_davomat`;
+        }
+    });
+
+    document.getElementById('teacherForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('teacherIdInput').value;
+        const subject_ids = [...document.querySelectorAll('.teacher-subj-cb:checked')].map(cb => parseInt(cb.value));
+        const payload = {
+            full_name: document.getElementById('teacherFullName').value.trim(),
+            username: document.getElementById('teacherUsername').value.trim(),
+            password: document.getElementById('teacherPassword').value.trim(),
+            email: document.getElementById('teacherEmail').value.trim(),
+            subject_ids
+        };
+        const url = id ? `/api/admin/teachers/${id}` : '/api/admin/teachers';
+        const method = id ? 'PUT' : 'POST';
+        const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('teacherModal')).hide();
+            showToast(data.message, 'success');
+            loadAdminOverview();
+        } else {
+            showToast(data.error || 'Error', 'danger');
+        }
+    });
+
+    window.deleteTeacher = async function(id) {
+        if (!confirm(window.I18N.confirm_delete_teacher)) return;
+        const res = await fetch(`/api/admin/teachers/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (res.ok) {
+            showToast(data.message, 'warning');
+            loadAdminOverview();
+        }
+    };
+
+    // Student Add / Edit Modal
+    window.openStudentModal = function(studentId = null) {
+        const s = studentId ? adminData.students.find(x => x.id === studentId) : null;
+        document.getElementById('studentIdInput').value = s ? s.id : '';
+        document.getElementById('studentModalTitle').textContent = s ? window.I18N.modal_edit_student : window.I18N.modal_add_student;
+        document.getElementById('studentFullName').value = s ? s.full_name : '';
+        document.getElementById('studentUsername').value = s ? s.username : '';
+        document.getElementById('studentGroup').value = s ? (s.group_name || 'ATT-241') : 'ATT-241';
+        document.getElementById('studentEmail').value = s ? (s.email || '') : '';
+        document.getElementById('studentPasswordRow').classList.toggle('d-none', !!s);
+
+        new bootstrap.Modal(document.getElementById('studentModal')).show();
+    };
+
+    document.getElementById('studentForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('studentIdInput').value;
+        const payload = {
+            full_name: document.getElementById('studentFullName').value.trim(),
+            username: document.getElementById('studentUsername').value.trim(),
+            group_name: document.getElementById('studentGroup').value.trim() || 'ATT-241',
+            password: document.getElementById('studentPassword').value.trim(),
+            email: document.getElementById('studentEmail').value.trim()
+        };
+        const url = id ? `/api/admin/students/${id}` : '/api/admin/students';
+        const method = id ? 'PUT' : 'POST';
+        const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('studentModal')).hide();
+            showToast(data.message, 'success');
+            loadAdminOverview();
+        } else {
+            showToast(data.error || 'Error', 'danger');
+        }
+    });
+
+    window.deleteStudent = async function(id) {
+        if (!confirm(window.I18N.confirm_delete_student)) return;
+        const res = await fetch(`/api/admin/students/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (res.ok) {
+            showToast(data.message, 'warning');
+            loadAdminOverview();
+        }
+    };
+
+    // Subject Add / Edit Modal
+    window.openSubjectModal = function(subjectId = null) {
+        const subj = subjectId ? adminData.subjects.find(x => x.id === subjectId) : null;
+        document.getElementById('subjectIdInput').value = subj ? subj.id : '';
+        document.getElementById('subjectModalTitle').textContent = subj ? window.I18N.modal_edit_subject : window.I18N.modal_add_subject;
+        document.getElementById('subjectCode').value = subj ? subj.code : `ATT-10${adminData.subjects.length + 1}`;
+        document.getElementById('subjectName').value = subj ? (subj.name_uz || subj.name) : '';
+        document.getElementById('subjectNameUzCyrl').value = subj ? (subj.name_uz_cyrl || '') : '';
+        document.getElementById('subjectNameRu').value = subj ? (subj.name_ru || '') : '';
+        document.getElementById('subjectNameEn').value = subj ? (subj.name_en || '') : '';
+        document.getElementById('subjectLectureTeacher').value = subj ? subj.lecture_teacher : '';
+        document.getElementById('subjectPracticalTeacher').value = subj ? subj.practical_teacher : '';
+
+        const selTeachers = subj ? (subj.teacher_ids || []) : [];
+        document.getElementById('subjectTeachersCheckboxes').innerHTML = adminData.teachers.map(t => `
+            <div class="form-check">
+                <input class="form-check-input subj-teacher-cb" type="checkbox" value="${t.id}" id="sTeach_${t.id}"
+                    ${selTeachers.includes(t.id) ? 'checked' : ''}>
+                <label class="form-check-label small" for="sTeach_${t.id}">${escapeHtml(t.full_name)} (@${escapeHtml(t.username)})</label>
+            </div>
+        `).join('');
+
+        const selGroups = subj ? (subj.group_ids || []) : adminData.groups.map(g => g.id);
+        document.getElementById('subjectGroupsCheckboxes').innerHTML = adminData.groups.map(g => `
+            <div class="form-check">
+                <input class="form-check-input subj-group-cb" type="checkbox" value="${g.id}" id="sGrp_${g.id}"
+                    ${selGroups.includes(g.id) ? 'checked' : ''}>
+                <label class="form-check-label small" for="sGrp_${g.id}">${escapeHtml(g.name)}</label>
+            </div>
+        `).join('');
+
+        new bootstrap.Modal(document.getElementById('subjectModal')).show();
+    };
+
+    document.getElementById('subjectForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('subjectIdInput').value;
+        const teacher_ids = [...document.querySelectorAll('.subj-teacher-cb:checked')].map(cb => parseInt(cb.value));
+        const group_ids = [...document.querySelectorAll('.subj-group-cb:checked')].map(cb => parseInt(cb.value));
+        const nameUz = document.getElementById('subjectName').value.trim();
+        const payload = {
+            code: document.getElementById('subjectCode').value.trim(),
+            name: nameUz,
+            name_uz: nameUz,
+            name_uz_cyrl: document.getElementById('subjectNameUzCyrl').value.trim() || nameUz,
+            name_ru: document.getElementById('subjectNameRu').value.trim() || nameUz,
+            name_en: document.getElementById('subjectNameEn').value.trim() || nameUz,
+            lecture_teacher: document.getElementById('subjectLectureTeacher').value.trim(),
+            practical_teacher: document.getElementById('subjectPracticalTeacher').value.trim(),
+            teacher_ids,
+            group_ids
+        };
+        const url = id ? `/api/admin/subjects/${id}` : '/api/admin/subjects';
+        const method = id ? 'PUT' : 'POST';
+        const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('subjectModal')).hide();
+            showToast(data.message, 'success');
+            loadAdminOverview();
+        } else {
+            showToast(data.error || 'Error', 'danger');
+        }
+    });
+
+    window.deleteSubject = async function(id) {
+        if (!confirm(window.I18N.confirm_delete_subject)) return;
+        const res = await fetch(`/api/admin/subjects/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (res.ok) {
+            showToast(data.message, 'warning');
+            loadAdminOverview();
+        }
+    };
+
+    // Group Create / Delete
+    document.getElementById('groupForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const subject_ids = [...document.querySelectorAll('.grp-subj-cb:checked')].map(cb => parseInt(cb.value));
+        const payload = {
+            name: document.getElementById('groupNameInput').value.trim(),
+            major: document.getElementById('groupMajorInput').value.trim(),
+            subject_ids
+        };
+        const res = await fetch('/api/admin/groups', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('groupModal')).hide();
+            e.target.reset();
+            showToast(data.message, 'success');
+            loadAdminOverview();
+        } else {
+            showToast(data.error || 'Error', 'danger');
+        }
+    });
+
+    window.deleteGroup = async function(id) {
+        if (!confirm(window.I18N.confirm_delete_group)) return;
+        const res = await fetch(`/api/admin/groups/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (res.ok) {
+            showToast(data.message, 'warning');
+            loadAdminOverview();
+        } else {
+            showToast(data.error || 'Error', 'danger');
+        }
+    };
+
+    // Safe Password Reset Lookup by User ID
+    window.openResetPasswordById = function(roleType, userId) {
+        const pool = roleType === 'teacher' ? adminData.teachers : adminData.students;
+        const u = pool.find(x => x.id === userId);
+        if (!u) return;
+
+        document.getElementById('resetPwUserId').value = u.id;
+        document.getElementById('resetPwUserName').textContent = u.full_name;
+        document.getElementById('resetPwUserLogin').textContent = `@${u.username}`;
+        document.getElementById('resetPwNewPassword').value = roleType === 'teacher' ? '123abc!' : 'abc123!';
+        new bootstrap.Modal(document.getElementById('resetPasswordModal')).show();
+    };
+
+    document.getElementById('resetPasswordForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const userId = document.getElementById('resetPwUserId').value;
+        const newPassword = document.getElementById('resetPwNewPassword').value.trim();
+        const res = await fetch(`/api/admin/users/${userId}/reset-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ new_password: newPassword })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('resetPasswordModal')).hide();
+            showToast(data.message, 'success');
+        } else {
+            showToast(data.error || 'Error', 'danger');
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', loadAdminOverview);
+</script>
+</body>
+</html>

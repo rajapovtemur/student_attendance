@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="{{ current_lang }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ t.student_cabinet }} (ATT-241) | {{ t.portal_brand }}</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --sidebar-width: 285px;
+        }
+        body {
+            background-color: #f1f5f9;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            overflow-x: hidden;
+        }
+        /* Full-height Dark Left Sidebar (Collapsible) */
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: linear-gradient(180deg, #0f172a 0%, #1e293b 65%, #0f172a 100%);
+            color: #fff;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1040;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+            overflow-y: auto;
+        }
+        /* Clean Navigation Menu */
+        .sidebar-nav .nav-link {
+            color: rgba(255, 255, 255, 0.78);
+            border-radius: 11px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.45rem;
+            font-weight: 600;
+            font-size: 0.92rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+        .sidebar-nav .nav-link:hover {
+            background: rgba(59, 130, 246, 0.18);
+            color: #ffffff;
+            transform: translateX(3px);
+        }
+        .sidebar-nav .nav-link.active {
+            background: linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%);
+            color: #ffffff;
+            box-shadow: 0 6px 15px rgba(37, 99, 235, 0.35);
+            border-color: rgba(147, 197, 253, 0.25);
+        }
+        /* Visually distinct 'Muhim E'lonlar' Widget */
+        .announcement-widget {
+            background: linear-gradient(145deg, rgba(245, 158, 11, 0.16) 0%, rgba(234, 88, 12, 0.12) 100%);
+            border: 1px solid rgba(251, 191, 36, 0.35);
+            border-left: 4px solid #f59e0b;
+            border-radius: 12px;
+            padding: 0.9rem 1rem;
+            color: #fef3c7;
+        }
+        .main-content {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        /* Desktop collapsed state: hide sidebar and expand main-content to full width */
+        body.sidebar-collapsed .sidebar {
+            transform: translateX(-100%);
+        }
+        body.sidebar-collapsed .main-content {
+            margin-left: 0;
+        }
+        /* Hamburger Toggle Button */
+        .sidebar-toggle-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #0f172a;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+        .sidebar-toggle-btn:hover {
+            background: #2563eb;
+            border-color: #2563eb;
+            color: #ffffff;
+            transform: scale(1.03);
+        }
+        /* Mobile Overlay Backdrop */
+        .sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(2px);
+            z-index: 1035;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        body.sidebar-mobile-open .sidebar-backdrop {
+            opacity: 1;
+            visibility: visible;
+        }
+        /* Modern Bootstrap Nav Tabs for the 3 Student Views */
+        .portal-nav-tabs {
+            border-bottom: 2px solid #e2e8f0;
+            gap: 0.5rem;
+        }
+        .portal-nav-tabs .nav-link {
+            border: none;
+            border-bottom: 3px solid transparent;
+            border-radius: 10px 10px 0 0;
+            color: #475569;
+            font-weight: 700;
+            padding: 0.75rem 1.25rem;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .portal-nav-tabs .nav-link:hover {
+            color: #1d4ed8;
+            background: rgba(37, 99, 235, 0.06);
+        }
+        .portal-nav-tabs .nav-link.active {
+            color: #2563eb;
+            background: #ffffff;
+            border-bottom-color: #2563eb;
+            box-shadow: 0 -2px 10px rgba(15, 23, 42, 0.04);
+        }
+        .card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
+        }
+        /* Redesigned Doughnut Chart Container */
+        .doughnut-wrapper {
+            position: relative;
+            width: 215px;
+            height: 215px;
+            margin: 0 auto;
+        }
+        .doughnut-center-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            pointer-events: none;
+        }
+        .doughnut-center-pct {
+            font-size: 1.75rem;
+            font-weight: 800;
+            line-height: 1.1;
+            color: #0f172a;
+        }
+        .doughnut-center-sub {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: #64748b;
+        }
+        .stat-pill {
+            border-radius: 12px;
+            padding: 0.6rem 0.75rem;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+        }
+        /* Subject Card without Code Badge */
+        .subject-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 1rem 1.1rem;
+            background: #ffffff;
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+        }
+        .subject-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.07);
+        }
+        .subject-card.red-line-card {
+            border-color: #fda4af;
+            background: #fff1f2;
+        }
+        /* Weekly Schedule Day Card styling */
+        .schedule-day-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            overflow: hidden;
+            background: #ffffff;
+            height: 100%;
+            box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+        }
+        .schedule-day-header {
+            background: linear-gradient(90deg, #1e3a8a 0%, #2563eb 100%);
+            color: #ffffff;
+            padding: 0.65rem 1rem;
+            font-weight: 700;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .schedule-slot {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .schedule-slot:last-child {
+            border-bottom: none;
+        }
+        .time-pill {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #1e40af;
+            background: #dbeafe;
+            padding: 0.2rem 0.55rem;
+            border-radius: 6px;
+            display: inline-block;
+        }
+        .room-pill {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #0f172a;
+            background: #e2e8f0;
+            padding: 0.2rem 0.55rem;
+            border-radius: 6px;
+        }
+        @media (max-width: 991.98px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            body.sidebar-mobile-open .sidebar {
+                transform: translateX(0);
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+            }
+            .main-content {
+                margin-left: 0 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Mobile Sidebar Overlay Backdrop -->
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeMobileSidebar()"></div>
+
+<!-- Dark Left Sidebar -->
+<aside class="sidebar p-3" id="appSidebar">
+    <!-- Top Section: Brand + Student Profile + Navigation Menu -->
+    <div>
+        <!-- Brand Header -->
+        <div class="d-flex align-items-center justify-content-between gap-2 px-1 pb-3 mb-3 border-bottom border-secondary border-opacity-25">
+            <div class="d-flex align-items-center gap-2">
+                <div class="bg-primary p-2 rounded-3 text-white d-inline-flex">
+                    <i class="bi bi-mortarboard-fill fs-4"></i>
+                </div>
+                <div>
+                    <h6 class="mb-0 fw-bold">{{ t.portal_brand }}</h6>
+                    <small class="text-info fw-semibold">{{ t.student_cabinet }} &bull; ATT-241</small>
+                </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-light d-lg-none" onclick="closeMobileSidebar()" title="Close">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <!-- Student Profile Info -->
+        <div class="p-3 rounded-3 bg-white bg-opacity-10 mb-4">
+            <div class="small text-white-50">{{ t.col_full_name }}:</div>
+            <div class="fw-bold text-white fs-6" id="sidebarStudentName">{{ user.full_name }}</div>
+            <div class="small text-white-50 mt-1" style="font-size: 0.75rem;">
+                {{ t.direction_label }}: <span class="text-light fw-semibold">{{ t.major_name }}</span>
+            </div>
+            <div class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top border-secondary border-opacity-25">
+                <span class="small text-white-50">{{ t.group_label }}:</span>
+                <span class="badge bg-info text-dark fw-bold px-2 py-1" id="sidebarStudentGroup">ATT-241</span>
+            </div>
+        </div>
+
+        <!-- Clean Navigation Menu (Switches the 3 Modular Views) -->
+        <div class="px-1 mb-2">
+            <small class="text-uppercase text-white-50 fw-bold" style="font-size: 0.72rem; letter-spacing: 0.6px;">
+                {{ t.main_menu }}
+            </small>
+        </div>
+        <ul class="nav flex-column sidebar-nav" id="studentSidebarNav">
+            <li class="nav-item">
+                <a class="nav-link active" data-tab-target="dashboard" onclick="switchStudentTab('dashboard')">
+                    <span>🏠</span>
+                    <span>{{ t.nav_dashboard }}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-tab-target="timetable" onclick="switchStudentTab('timetable')">
+                    <span>📅</span>
+                    <span>{{ t.nav_timetable }}</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-tab-target="history" onclick="switchStudentTab('history')">
+                    <span>🕒</span>
+                    <span>{{ t.nav_history }}</span>
+                </a>
+            </li>
+            <li class="nav-item mt-2 pt-2 border-top border-secondary border-opacity-25">
+                <a class="nav-link" href="/settings">
+                    <span>⚙️</span>
+                    <span>{{ t.nav_settings }}</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Bottom Section: Muhim E'lonlar Widget + Logout Button -->
+    <div>
+        <!-- Muhim E'lonlar (Announcements) Card -->
+        <div class="announcement-widget mb-3 shadow-sm">
+            <div class="d-flex align-items-center gap-2 fw-bold text-warning mb-1" style="font-size: 0.84rem;">
+                <i class="bi bi-megaphone-fill"></i>
+                <span>{{ t.announcements_title }}</span>
+            </div>
+            <p class="mb-0 small" style="font-size: 0.79rem; line-height: 1.4; color: rgba(255, 255, 255, 0.9);">
+                {{ t.announcements_text }}
+            </p>
+        </div>
+
+        <!-- Logout Button at the Very Bottom -->
+        <div class="border-top border-secondary border-opacity-25 pt-3">
+            <a href="/logout" class="btn btn-outline-light w-100 btn-sm fw-semibold py-2">
+                <i class="bi bi-box-arrow-right me-1"></i> {{ t.logout }}
+            </a>
+        </div>
+    </div>
+</aside>
+
+<!-- Main Content -->
+<div class="main-content" id="dashboardTopSection">
+    <header class="bg-white border-bottom px-4 py-3 d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <button type="button" id="sidebarToggleBtn" class="sidebar-toggle-btn shadow-sm" onclick="toggleSidebar()" title="Toggle Sidebar">
+                <i class="bi bi-list fs-4"></i>
+            </button>
+            <div>
+                <h5 class="mb-0 fw-bold">{{ t.student_header_title }}</h5>
+                <small class="text-muted">{{ t.student_header_subtitle }}</small>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <!-- 4-Language Switcher Dropdown -->
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle fw-semibold" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-translate me-1 text-primary"></i> {{ supported_languages[current_lang] }}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                    {% for code, name in supported_languages.items() %}
+                    <li>
+                        <a class="dropdown-item d-flex justify-content-between align-items-center {% if code == current_lang %}active fw-bold{% endif %}"
+                           href="/set-language/{{ code }}">
+                            <span>{{ name }}</span>
+                            {% if code == current_lang %}<i class="bi bi-check2 ms-2"></i>{% endif %}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <a href="/settings" class="btn btn-sm btn-outline-secondary fw-semibold">
+                <i class="bi bi-gear-fill me-1"></i> {{ t.nav_settings }}
+            </a>
+            <div id="studentRedLineAlert"></div>
+        </div>
+    </header>
+
+    <div class="container-fluid p-4">
+        <!-- Active QR Session Banner (if teacher started class) -->
+        <div id="activeQrBanner" class="mb-3"></div>
+
+        <!-- ==================== BOOTSTRAP NAV TABS (3 MODULAR VIEWS) ==================== -->
+        <ul class="nav nav-tabs portal-nav-tabs mb-4" id="studentContentTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tabBtn-dashboard" type="button" role="tab" onclick="switchStudentTab('dashboard')">
+                    <span>🏠</span>
+                    <span>{{ t.nav_dashboard }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tabBtn-timetable" type="button" role="tab" onclick="switchStudentTab('timetable')">
+                    <span>📅</span>
+                    <span>{{ t.nav_timetable }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tabBtn-history" type="button" role="tab" onclick="switchStudentTab('history')">
+                    <span>🕒</span>
+                    <span>{{ t.nav_history }}</span>
+                    <span class="badge rounded-pill bg-danger ms-1" id="tabHistoryCountBadge">0</span>
+                </button>
+            </li>
+        </ul>
+
+        <!-- ==================== TAB CONTENT PANES ==================== -->
+        <div class="tab-content" id="studentTabContent">
+
+            <!-- ==================== TAB 1: BOSH SAHIFA (DASHBOARD: DOUGHNUT CHART & 5 SUBJECT CARDS) ==================== -->
+            <div class="tab-pane fade show active" id="pane-dashboard" role="tabpanel">
+                <div class="row g-4">
+                    <!-- Redesigned Umumiy Davomat / Qoldirilgan Foiz Card -->
+                    <div class="col-lg-4">
+                        <div class="card p-4 h-100 d-flex flex-column justify-content-between">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="fw-bold text-dark mb-0">
+                                    <i class="bi bi-pie-chart-fill text-success me-2"></i>{{ t.hemis_chart_title }}
+                                </h6>
+                                <span class="badge bg-light text-secondary border fw-semibold" id="totalClassesBadge">{{ t.semester_36_badge }}</span>
+                            </div>
+
+                            <div class="text-center mb-1">
+                                <span class="badge bg-danger-subtle text-danger-emphasis px-3 py-1 fw-bold" id="missedRateHeaderBadge">
+                                    {{ t.missed_pct_badge }}: 0%
+                                </span>
+                            </div>
+
+                            <!-- Properly Sized Centered Doughnut Chart with Inner Percentage -->
+                            <div class="my-2">
+                                <div class="doughnut-wrapper">
+                                    <canvas id="attendanceDoughnutChart"></canvas>
+                                    <div class="doughnut-center-label">
+                                        <div class="doughnut-center-pct" id="centerPctValue">0%</div>
+                                        <div class="doughnut-center-sub" id="centerSubLabel">{{ t.center_missed_label }}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Summary Pills Below Chart (Based on 36 Fixed Semester Classes) -->
+                            <div class="row g-2 mt-3 text-center">
+                                <div class="col-6">
+                                    <div class="stat-pill">
+                                        <div class="d-flex align-items-center justify-content-center gap-1 small text-secondary fw-semibold">
+                                            <span class="d-inline-block rounded-circle" style="width: 10px; height: 10px; background: #28a745;"></span>
+                                            <span>{{ t.active_from_36 }}</span>
+                                        </div>
+                                        <h5 class="fw-bold mb-0 mt-1" style="color: #28a745;" id="presentClassesText">36 / 36</h5>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="stat-pill">
+                                        <div class="d-flex align-items-center justify-content-center gap-1 small text-secondary fw-semibold">
+                                            <span class="d-inline-block rounded-circle" style="width: 10px; height: 10px; background: #dc3545;"></span>
+                                            <span>{{ t.missed_from_36 }}</span>
+                                        </div>
+                                        <h5 class="fw-bold mb-0 mt-1" style="color: #dc3545;" id="absentClassesText">0 / 36</h5>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 5 Merged Subject Attendance Cards (No Subject Code Badges, Fixed 36-Class Metric) -->
+                    <div class="col-lg-8">
+                        <div class="card p-4 h-100">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                                <h6 class="fw-bold text-dark mb-0">
+                                    <i class="bi bi-journal-bookmark-fill text-primary me-2"></i>{{ t.subjects_section_title }}
+                                </h6>
+                                <span class="badge bg-primary-subtle text-primary-emphasis">{{ t.limit_25_badge }}</span>
+                            </div>
+                            <div class="row g-3" id="subjectBreakdownContainer">
+                                {% for subj in subjects %}
+                                <div class="col-md-6">
+                                    <div class="subject-card h-100 d-flex flex-column justify-content-between">
+                                        <div>
+                                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                                <h6 class="fw-bold text-dark mb-0" style="font-size: 0.94rem; line-height: 1.3;">
+                                                    {{ subj.localized_name }}
+                                                </h6>
+                                                <span class="badge bg-success flex-shrink-0">{{ t.missed_pct_badge }}: 0%</span>
+                                            </div>
+                                            <div class="small text-muted mb-2" style="font-size: 0.79rem;">
+                                                <div class="mb-1">
+                                                    <i class="bi bi-easel text-primary me-1"></i>{{ t.lecture_18_label }}: <b class="text-dark">{{ subj.lecture_teacher }}</b>
+                                                </div>
+                                                <div>
+                                                    <i class="bi bi-laptop text-success me-1"></i>{{ t.practical_18_label }}: <b class="text-dark">{{ subj.practical_teacher }}</b>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== TAB 2: DARS JADVALI (TIMETABLE ONLY) ==================== -->
+            <div class="tab-pane fade" id="pane-timetable" role="tabpanel">
+                <div class="card p-4">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                        <div>
+                            <h5 class="fw-bold text-dark mb-0">
+                                <i class="bi bi-calendar-week-fill text-primary me-2"></i>{{ t.timetable_header }}
+                            </h5>
+                            <small class="text-muted">{{ t.timetable_sub }}</small>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <span class="badge bg-primary">Ma'ruza</span>
+                            <span class="badge bg-success">Amaliy</span>
+                            <span class="badge bg-warning text-dark">Laboratoriya</span>
+                        </div>
+                    </div>
+
+                    <div class="row g-3" id="weeklyScheduleContainer">
+                        <div class="col-12 text-center py-4 text-muted">...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== TAB 3: DAVOMAT TARIXI (MISSED CLASSES HISTORY ONLY) ==================== -->
+            <div class="tab-pane fade" id="pane-history" role="tabpanel">
+                <div class="card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold text-danger mb-0">
+                            <i class="bi bi-calendar-x-fill me-2"></i>{{ t.history_header }}
+                        </h6>
+                        <span class="badge bg-danger-subtle text-danger-emphasis" id="missedCountBadge">0</span>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 55px;">#</th>
+                                    <th>{{ t.col_date_type }}</th>
+                                    <th>{{ t.col_subject }}</th>
+                                    <th>{{ t.col_teacher }}</th>
+                                    <th>{{ t.col_hemis_impact }}</th>
+                                    <th>{{ t.col_reason }}</th>
+                                </tr>
+                            </thead>
+                            <tbody id="missedClassesTableBody">
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-muted">...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    window.I18N = {{ t | tojson }};
+    const initialActiveTab = {{ (active_tab or 'dashboard') | tojson }};
+    let doughnutChartInstance = null;
+
+    // Collapsible Sidebar Toggle (Smooth Desktop & Mobile Responsive)
+    window.toggleSidebar = function() {
+        if (window.innerWidth < 992) {
+            document.body.classList.toggle('sidebar-mobile-open');
+        } else {
+            document.body.classList.toggle('sidebar-collapsed');
+        }
+    };
+
+    window.closeMobileSidebar = function() {
+        document.body.classList.remove('sidebar-mobile-open');
+    };
+
+    // Switch between the 3 Modular Student Views ('dashboard', 'timetable', 'history')
+    window.switchStudentTab = function(tabName) {
+        const validTabs = ['dashboard', 'timetable', 'history'];
+        if (!validTabs.includes(tabName)) tabName = 'dashboard';
+
+        // 1. Update Sidebar Nav Links
+        document.querySelectorAll('#studentSidebarNav .nav-link').forEach(link => {
+            link.classList.toggle('active', link.getAttribute('data-tab-target') === tabName);
+        });
+
+        // 2. Update Top Bootstrap Nav Tabs
+        validTabs.forEach(tKey => {
+            const btn = document.getElementById(`tabBtn-${tKey}`);
+            const pane = document.getElementById(`pane-${tKey}`);
+            const isMatch = (tKey === tabName);
+            if (btn) btn.classList.toggle('active', isMatch);
+            if (pane) {
+                pane.classList.toggle('show', isMatch);
+                pane.classList.toggle('active', isMatch);
+            }
+        });
+
+        // 3. Update URL query param cleanly without reloading
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', tabName);
+        window.history.replaceState({}, '', url);
+
+        if (window.innerWidth < 992) {
+            closeMobileSidebar();
+        }
+    };
+
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const el = document.createElement('div');
+        el.className = `toast align-items-center text-bg-${type} border-0 shadow`;
+        el.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body fw-semibold">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        container.appendChild(el);
+        new bootstrap.Toast(el, { delay: 3500 }).show();
+    }
+
+    function getClassTypeBadge(cType) {
+        if (cType === "Ma'ruza") return `<span class="badge bg-primary">Ma'ruza</span>`;
+        if (cType === "Amaliy") return `<span class="badge bg-success">Amaliy</span>`;
+        return `<span class="badge bg-warning text-dark">${cType}</span>`;
+    }
+
+    function renderAttendanceDoughnutChart(remainingClasses, absentCount, missedPercentage, isRedLine) {
+        const canvas = document.getElementById('attendanceDoughnutChart');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+
+        if (doughnutChartInstance) {
+            doughnutChartInstance.destroy();
+        }
+
+        const centerPctEl = document.getElementById('centerPctValue');
+        centerPctEl.textContent = `${missedPercentage}%`;
+        centerPctEl.style.color = isRedLine ? '#dc3545' : (absentCount > 0 ? '#d97706' : '#28a745');
+
+        const chartData = [remainingClasses, absentCount];
+        const chartColors = ['#28a745', '#dc3545'];
+
+        doughnutChartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: [window.I18N.active_from_36, window.I18N.missed_from_36],
+                datasets: [{
+                    data: chartData,
+                    backgroundColor: chartColors,
+                    hoverBackgroundColor: ['#218838', '#c82333'],
+                    borderWidth: 3,
+                    borderColor: '#ffffff',
+                    hoverOffset: 6,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '73%',
+                animation: {
+                    animateScale: true,
+                    animateRotate: true,
+                    duration: 900,
+                    easing: 'easeOutQuart'
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        enabled: true,
+                        callbacks: {
+                            label: function(context) {
+                                const val = context.raw || 0;
+                                const pct = ((val / 36) * 100).toFixed(2).replace(/\.00$/, '');
+                                return ` ${context.label}: ${val} / 36 (${pct}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    async function loadStudentDashboard() {
+        try {
+            const res = await fetch('/api/student/me');
+            const data = await res.json();
+            if (!res.ok) return;
+
+            const st = data.student;
+            const stats = data.overall_stats;
+            const fixedTotal = stats.fixed_semester_total || 36;
+
+            document.getElementById('sidebarStudentName').textContent = st.full_name;
+            document.getElementById('sidebarStudentGroup').textContent = st.group_name || 'ATT-241';
+
+            document.getElementById('missedRateHeaderBadge').textContent = `${window.I18N.missed_pct_badge}: ${stats.missed_percentage}%`;
+            document.getElementById('missedRateHeaderBadge').className = stats.is_red_line
+                ? 'badge bg-danger text-white px-3 py-1 fw-bold'
+                : 'badge bg-success-subtle text-success-emphasis px-3 py-1 fw-bold';
+
+            document.getElementById('presentClassesText').textContent = `${stats.remaining_classes} / ${fixedTotal}`;
+            document.getElementById('absentClassesText').textContent = `${stats.absent_count} / ${fixedTotal}`;
+            document.getElementById('missedCountBadge').textContent = `${stats.absent_count} / ${fixedTotal} (${stats.missed_percentage}%)`;
+            document.getElementById('tabHistoryCountBadge').textContent = stats.absent_count;
+
+            // Red Line Warning Banner
+            const alertEl = document.getElementById('studentRedLineAlert');
+            if (stats.is_red_line) {
+                alertEl.innerHTML = `
+                    <span class="badge bg-danger p-2">
+                        <i class="bi bi-exclamation-octagon-fill me-1"></i>
+                        ${window.I18N.status_redline_msg} (${stats.missed_percentage}%)
+                    </span>
+                `;
+            } else {
+                alertEl.innerHTML = `
+                    <span class="badge bg-success p-2">
+                        <i class="bi bi-shield-check me-1"></i> ${window.I18N.status_normal_msg}: ${stats.missed_percentage}% (${stats.absent_count}/${fixedTotal})
+                    </span>
+                `;
+            }
+
+            // 1. Render Redesigned Animated Doughnut Chart (Hemis 36-class model)
+            renderAttendanceDoughnutChart(
+                stats.remaining_classes,
+                stats.absent_count,
+                stats.missed_percentage,
+                stats.is_red_line
+            );
+
+            // 2. Render Subject Cards (No Subject Code Badges, Fixed 36-Class Metric)
+            const subjContainer = document.getElementById('subjectBreakdownContainer');
+            subjContainer.innerHTML = data.subject_breakdown.map(item => {
+                const s = item.stats;
+                const isRed = s.is_red_line;
+                const statusColor = isRed ? '#dc3545' : (s.absent_count > 0 ? '#d97706' : '#28a745');
+                const barWidth = Math.min(100, s.missed_percentage);
+                return `
+                    <div class="col-md-6">
+                        <div class="subject-card ${isRed ? 'red-line-card' : ''} h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                    <h6 class="fw-bold text-dark mb-0" style="font-size: 0.94rem; line-height: 1.3;">
+                                        ${item.localized_name || item.subject_name}
+                                    </h6>
+                                    <span class="badge ${isRed ? 'bg-danger' : (s.absent_count > 0 ? 'bg-warning text-dark' : 'bg-success')} flex-shrink-0">
+                                        ${window.I18N.missed_pct_badge}: ${s.missed_percentage}%
+                                    </span>
+                                </div>
+                                <div class="small text-muted mb-2" style="font-size: 0.79rem;">
+                                    <div class="mb-1">
+                                        <i class="bi bi-easel text-primary me-1"></i>${window.I18N.lecture_18_label}: <b class="text-dark">${item.lecture_teacher}</b>
+                                        <span class="text-danger fw-semibold ms-1">(${window.I18N.missed_word}: ${s.lecture_absent}/18)</span>
+                                    </div>
+                                    <div>
+                                        <i class="bi bi-laptop text-success me-1"></i>${window.I18N.practical_18_label}: <b class="text-dark">${item.practical_teacher}</b>
+                                        <span class="text-danger fw-semibold ms-1">(${window.I18N.missed_word}: ${s.practical_absent}/18)</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="progress mb-2" style="height: 7px; background-color: #e2e8f0;" title="${window.I18N.missed_pct_badge}: ${s.missed_percentage}%">
+                                    <div class="progress-bar" style="width: ${barWidth}%; background-color: ${statusColor};"></div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center small text-secondary">
+                                    <span>${window.I18N.missed_word}: <b style="color: #dc3545;">${s.absent_count} / 36 ${window.I18N.classes_unit}</b></span>
+                                    <span>
+                                        ${isRed
+                                            ? '<span class="badge bg-danger">RED LINE (&gt;25%)</span>'
+                                            : `<span class="text-success fw-semibold">${window.I18N.attendance_word}: ${s.attendance_percentage}%</span>`}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // 3. Render Weekly Schedule ('Haftalik Dars Jadvali') in Tab 2
+            const scheduleContainer = document.getElementById('weeklyScheduleContainer');
+            if (data.weekly_schedule && data.weekly_schedule.length > 0) {
+                scheduleContainer.innerHTML = data.weekly_schedule.map(dayGroup => `
+                    <div class="col-md-6 col-xl-4">
+                        <div class="schedule-day-card">
+                            <div class="schedule-day-header">
+                                <span><i class="bi bi-calendar2-day me-2"></i>${dayGroup.day}</span>
+                                <span class="badge bg-white text-primary">${dayGroup.classes.length} para</span>
+                            </div>
+                            <div>
+                                ${dayGroup.classes.map(cls => `
+                                    <div class="schedule-slot">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="time-pill"><i class="bi bi-clock me-1"></i>${cls.time_range}</span>
+                                            <div class="d-flex align-items-center gap-1">
+                                                <span class="room-pill"><i class="bi bi-geo-alt-fill text-danger me-1"></i>${cls.room}</span>
+                                                ${getClassTypeBadge(cls.class_type)}
+                                            </div>
+                                        </div>
+                                        <div class="fw-bold text-dark mt-1" style="font-size: 0.9rem;">${cls.localized_subject_name || cls.subject_name}</div>
+                                        <div class="small text-secondary mt-1">
+                                            <i class="bi bi-person-badge me-1 text-primary"></i>${cls.teacher_name}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Active QR Check-in Banner if any class is live
+            const qrBanner = document.getElementById('activeQrBanner');
+            if (data.active_qr_sessions && data.active_qr_sessions.length > 0) {
+                qrBanner.innerHTML = data.active_qr_sessions.map(sess => `
+                    <div class="alert alert-primary d-flex flex-wrap justify-content-between align-items-center mb-2 shadow-sm">
+                        <div>
+                            <i class="bi bi-broadcast me-2"></i>
+                            <strong>Live QR:</strong> ${sess.localized_name || sess.subject_name}
+                            <span class="badge bg-warning text-dark ms-1">${sess.class_type}</span> — ${sess.teacher_name}
+                        </div>
+                        <button class="btn btn-success btn-sm fw-semibold" onclick="checkInLiveClass('${sess.token}')">
+                            <i class="bi bi-qr-code-scan me-1"></i> Check-in
+                        </button>
+                    </div>
+                `).join('');
+            } else {
+                qrBanner.innerHTML = '';
+            }
+
+            // 4. Render Missed Classes Table in Tab 3
+            const tbody = document.getElementById('missedClassesTableBody');
+            if (stats.missed_records.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-success fw-semibold">
+                            <i class="bi bi-emoji-sunglasses me-1"></i> ${window.I18N.no_missed_msg}
+                        </td>
+                    </tr>
+                `;
+            } else {
+                tbody.innerHTML = stats.missed_records.map((rec, i) => {
+                    const typeBadgeClass = rec.class_type === "Ma'ruza" ? 'bg-primary' : 'bg-success';
+                    return `
+                        <tr>
+                            <td class="fw-semibold text-secondary">${i + 1}</td>
+                            <td>
+                                <span class="fw-bold">${rec.date}</span>
+                                <span class="badge ${typeBadgeClass} ms-2">${rec.class_type}</span>
+                            </td>
+                            <td class="fw-semibold">${rec.localized_subject_name || rec.subject_name}</td>
+                            <td>${rec.teacher_name || '-'}</td>
+                            <td><span class="badge bg-danger">+2.78% (1 / 36 ${window.I18N.classes_unit})</span></td>
+                            <td>${rec.note || '<span class="text-muted fst-italic">-</span>'}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        } catch (err) {
+            showToast("Error loading student dashboard", "danger");
+        }
+    }
+
+    window.checkInLiveClass = async function(token) {
+        const res = await fetch(`/qr-checkin/${token}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        });
+        const data = await res.json();
+        if (res.ok) {
+            showToast(data.message, 'success');
+            loadStudentDashboard();
+        }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (initialActiveTab && initialActiveTab !== 'dashboard') {
+            switchStudentTab(initialActiveTab);
+        }
+        loadStudentDashboard();
+    });
+</script>
+</body>
+</html>
